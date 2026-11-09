@@ -32,7 +32,22 @@ public class CodeCityService {
     private final GitHubService gitHubService;
     private final org.springframework.beans.factory.ObjectProvider<ArchitectureAnalysisService> architectureAnalysisServiceProvider;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final Map<Long, CityModelDTO> cityModelCache = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<Long, CityModelDTO> cityModelCache = Collections.synchronizedMap(
+            new LinkedHashMap<Long, CityModelDTO>(8, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<Long, CityModelDTO> eldest) {
+                    return size() > 3;
+                }
+            }
+    );
+    private final Map<Long, ArchitectureIntelligenceDTO> intelligenceCache = Collections.synchronizedMap(
+            new LinkedHashMap<Long, ArchitectureIntelligenceDTO>(8, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<Long, ArchitectureIntelligenceDTO> eldest) {
+                    return size() > 3;
+                }
+            }
+    );
 
     public static String cleanComponentName(String raw) {
         if (raw == null || raw.isBlank())
@@ -90,6 +105,7 @@ public class CodeCityService {
         // 2. Compute deterministic 2D spatial layout derived strictly from repository content
         CityModelDTO cityModel = computeSpatialLayout(repo, snapshot, allNodes, allEdges);
         cityModelCache.put(snapshot.getId(), cityModel);
+        intelligenceCache.remove(snapshot.getId());
 
         // 3. Persist layout cache
         persistCityLayoutCache(snapshot, cityModel);
@@ -2391,21 +2407,68 @@ public class CodeCityService {
                 .orElse(null);
         if (snapshot == null)
             return Collections.emptyList();
-        List<CodeEndpoint> entities = endpointRepository.findBySnapshotIdOrderByRoutePathAsc(snapshot.getId());
-        List<ArchitectureNode> allNodes = nodeRepository.findBySnapshotId(snapshot.getId());
-        List<ArchitectureEdge> allEdges = edgeRepository.findBySnapshotId(snapshot.getId());
 
-        // On-demand sync: If snapshot contains API_ENDPOINT architecture nodes but code_endpoints table is empty
-        if (entities.isEmpty() && allNodes.stream().anyMatch(n -> "API_ENDPOINT".equalsIgnoreCase(n.getNodeType()))) {
-            com.impactmapper.entity.Repository repo = repositoryRepository.findById(repoId).orElse(null);
-            if (repo != null) {
-                syncEndpoints(repo, snapshot, allNodes, allEdges);
-                entities = endpointRepository.findBySnapshotIdOrderByRoutePathAsc(snapshot.getId());
+        List<CodeEndpoint> entities = endpointRepository.findBySnapshotIdOrderByRoutePathAsc(snapshot.getId());
+        List<ArchitectureNode> allNodes = null;
+        List<ArchitectureEdge> allEdges = null;
+
+        // On-demand sync: If endpoints table is empty, lazily load nodes & edges to perform one-time extraction
+        if (entities.isEmpty()) {
+            allNodes = nodeRepository.findBySnapshotId(snapshot.getId());
+            allEdges = edgeRepository.findBySnapshotId(snapshot.getId());
+            if (allNodes.stream().anyMatch(n -> "API_ENDPOINT".equalsIgnoreCase(n.getNodeType()))) {
+                com.impactmapper.entity.Repository repo = repositoryRepository.findById(repoId).orElse(null);
+                if (repo != null) {
+                    syncEndpoints(repo, snapshot, allNodes, allEdges);
+                    entities = endpointRepository.findBySnapshotIdOrderByRoutePathAsc(snapshot.getId());
+                }
             }
         }
 
+        if (entities.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Fast O(1) Stage Indexing: Pre-index edge targets by source controller to avoid O(Endpoints * Edges) nested loops
+        if (allEdges == null) {
+            allEdges = edgeRepository.findBySnapshotId(snapshot.getId());
+        }
+
+        boolean hasSecurity = false;
+        if (allNodes != null) {
+            hasSecurity = allNodes.stream().anyMatch(n -> {
+                String k = n.getNodeKey().toLowerCase();
+                return k.contains("security") || k.contains("auth") || k.contains("jwt") || k.contains("filter");
+            });
+        } else {
+            hasSecurity = entities.stream().anyMatch(e -> e.getAuthClassification() != null && !e.getAuthClassification().equalsIgnoreCase("PUBLIC"));
+        }
+
+        Set<String> controllersCallingService = new HashSet<>();
+        Set<String> controllersCallingRepo = new HashSet<>();
+        boolean hasExternalCalls = false;
+
+        for (ArchitectureEdge e : allEdges) {
+            String src = e.getSourceNodeKey();
+            String tgt = e.getTargetNodeKey().toLowerCase();
+            if (tgt.contains("service") || tgt.contains("manager")) {
+                controllersCallingService.add(src);
+            }
+            if ("PERSISTS_TO".equalsIgnoreCase(e.getRelationshipType())
+                    || tgt.contains("repository")
+                    || tgt.contains("dao")) {
+                controllersCallingRepo.add(src);
+            }
+            if (tgt.contains("client") || tgt.contains("feign") || tgt.contains("http")) {
+                hasExternalCalls = true;
+            }
+        }
+
+        final boolean finalHasSecurity = hasSecurity;
+        final boolean finalHasExternal = hasExternalCalls;
+
         return entities.stream().map(e -> {
-            List<String> stages = calculateStagesForEndpoint(e, allNodes, allEdges);
+            List<String> stages = calculateStagesFast(e, finalHasSecurity, controllersCallingService, controllersCallingRepo, finalHasExternal);
             int estSteps = Math.max(stages.size() * 2, 2);
             return EndpointDTO.builder()
                     .id(e.getId())
@@ -2430,42 +2493,47 @@ public class CodeCityService {
         }).collect(Collectors.toList());
     }
 
-    private List<String> calculateStagesForEndpoint(CodeEndpoint ep, List<ArchitectureNode> nodes,
-            List<ArchitectureEdge> edges) {
-        List<String> stages = new ArrayList<>();
+    private List<String> calculateStagesFast(CodeEndpoint ep, boolean hasSecurity,
+            Set<String> controllersCallingService, Set<String> controllersCallingRepo, boolean hasExternalCalls) {
+        List<String> stages = new ArrayList<>(6);
         stages.add("REQUEST_ENTRY");
 
-        boolean hasSecurity = nodes.stream().anyMatch(n -> {
-            String k = n.getNodeKey().toLowerCase();
-            return k.contains("security") || k.contains("auth") || k.contains("jwt") || k.contains("filter");
-        });
         if (hasSecurity) {
             stages.add("SECURITY_MIDDLEWARE");
         }
 
         stages.add("CONTROLLER");
 
-        boolean callsService = edges.stream().anyMatch(e -> e.getSourceNodeKey().contains(ep.getControllerClass()) &&
-                (e.getTargetNodeKey().toLowerCase().contains("service")
-                        || e.getTargetNodeKey().toLowerCase().contains("manager")));
+        String ctrl = ep.getControllerClass();
+        boolean callsService = false;
+        if (ctrl != null) {
+            for (String src : controllersCallingService) {
+                if (src.contains(ctrl)) {
+                    callsService = true;
+                    break;
+                }
+            }
+        }
+
         if (callsService) {
             stages.add("BUSINESS_SERVICE");
         }
 
-        boolean callsRepo = edges.stream()
-                .anyMatch(e -> (e.getSourceNodeKey().contains(ep.getControllerClass()) || callsService) &&
-                        ("PERSISTS_TO".equalsIgnoreCase(e.getRelationshipType())
-                                || e.getTargetNodeKey().toLowerCase().contains("repository")
-                                || e.getTargetNodeKey().toLowerCase().contains("dao")));
+        boolean callsRepo = false;
+        if (ctrl != null) {
+            for (String src : controllersCallingRepo) {
+                if (src.contains(ctrl) || callsService) {
+                    callsRepo = true;
+                    break;
+                }
+            }
+        }
+
         if (callsRepo) {
             stages.add("DATA_ACCESS");
         }
 
-        boolean callsExternal = edges.stream()
-                .anyMatch(e -> e.getTargetNodeKey().toLowerCase().contains("client")
-                        || e.getTargetNodeKey().toLowerCase().contains("feign")
-                        || e.getTargetNodeKey().toLowerCase().contains("http"));
-        if (callsExternal) {
+        if (hasExternalCalls) {
             stages.add("EXTERNAL_SERVICE");
         }
 
@@ -3041,6 +3109,13 @@ public class CodeCityService {
         ArchitectureSnapshot snapshot = snapshotRepository.findTopByRepositoryIdOrderByAnalyzedAtDesc(repositoryId)
                 .orElse(null);
 
+        if (snapshot != null) {
+            ArchitectureIntelligenceDTO cached = intelligenceCache.get(snapshot.getId());
+            if (cached != null) {
+                return cached;
+            }
+        }
+
         if (snapshot == null) {
             return ArchitectureIntelligenceDTO.builder()
                     .repositoryId(repositoryId)
@@ -3145,7 +3220,7 @@ public class CodeCityService {
         ArchitectureIntelligenceDTO.RuntimePerformanceSummaryDTO runtimeSummary = analyzeRuntimePerformance(traces);
         ArchitectureIntelligenceDTO.SnapshotDeltaDTO snapshotDelta = compareSnapshots(repo, snapshot);
 
-        return ArchitectureIntelligenceDTO.builder()
+        ArchitectureIntelligenceDTO result = ArchitectureIntelligenceDTO.builder()
                 .repositoryId(repositoryId)
                 .repositoryName(repo.getRepoName())
                 .snapshotId(snapshot.getId())
@@ -3168,6 +3243,9 @@ public class CodeCityService {
                 .runtimePerformance(runtimeSummary)
                 .snapshotDelta(snapshotDelta)
                 .build();
+
+        intelligenceCache.put(snapshot.getId(), result);
+        return result;
     }
 
     private List<ArchitectureIntelligenceDTO.HotspotDTO> detectHotspots(

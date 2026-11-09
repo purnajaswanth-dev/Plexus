@@ -1,7 +1,10 @@
 package com.impactmapper.controller;
 
+import com.impactmapper.service.ArchitectureAnalysisService;
+import com.impactmapper.service.RepoIndexingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,14 +12,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.sql.DataSource;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.ThreadMXBean;
 import java.sql.Connection;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Production Health Check Controller for Cloud Platforms (Render, Kubernetes, etc.)
- * Exposes lightweight, unauthenticated health probes that do not depend on external APIs (e.g. GitHub).
+ * Production Health & Diagnostic Controller for Cloud Platforms (Render, Kubernetes, etc.)
+ * Exposes lightweight, unauthenticated health probes and memory diagnostics.
  */
 @RestController
 @RequestMapping("/api/health")
@@ -25,15 +32,22 @@ import java.util.Map;
 public class HealthController {
 
     private final DataSource dataSource;
+    private final ObjectProvider<RepoIndexingService> repoIndexingServiceProvider;
+    private final ObjectProvider<ArchitectureAnalysisService> architectureAnalysisServiceProvider;
 
     /**
-     * Readiness probe: Verifies application vitality and database connectivity.
+     * Readiness probe: Verifies application vitality, database connectivity, and basic heap state.
      */
     @GetMapping
     public ResponseEntity<Map<String, Object>> healthCheck() {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("service", "Plexus Dependency Impact Mapper");
         response.put("timestamp", Instant.now().toString());
+
+        Runtime runtime = Runtime.getRuntime();
+        long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+        response.put("heapUsedMb", Math.round(usedMemory / (1024.0 * 1024.0) * 10.0) / 10.0);
+        response.put("heapMaxMb", Math.round(runtime.maxMemory() / (1024.0 * 1024.0) * 10.0) / 10.0);
 
         try (Connection connection = dataSource.getConnection()) {
             boolean valid = connection.isValid(2);
@@ -57,7 +71,7 @@ public class HealthController {
     }
 
     /**
-     * Liveness probe: Verifies web server is running and accepting HTTP requests.
+     * Liveness probe: Fast non-blocking check verifying web server is accepting traffic.
      */
     @GetMapping("/liveness")
     public ResponseEntity<Map<String, Object>> livenessCheck() {
@@ -66,5 +80,66 @@ public class HealthController {
         response.put("timestamp", Instant.now().toString());
         return ResponseEntity.ok(response);
     }
-}
 
+    /**
+     * Lightweight memory & concurrency diagnostics for container monitoring.
+     */
+    @GetMapping("/memory")
+    public ResponseEntity<Map<String, Object>> memoryDiagnostics() {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("service", "Plexus Dependency Impact Mapper");
+        response.put("timestamp", Instant.now().toString());
+
+        Runtime runtime = Runtime.getRuntime();
+        long totalMemory = runtime.totalMemory();
+        long freeMemory = runtime.freeMemory();
+        long usedMemory = totalMemory - freeMemory;
+        long maxMemory = runtime.maxMemory();
+
+        Map<String, Object> heap = new LinkedHashMap<>();
+        heap.put("usedMb", Math.round(usedMemory / (1024.0 * 1024.0) * 10.0) / 10.0);
+        heap.put("committedMb", Math.round(totalMemory / (1024.0 * 1024.0) * 10.0) / 10.0);
+        heap.put("maxMb", Math.round(maxMemory / (1024.0 * 1024.0) * 10.0) / 10.0);
+        heap.put("usedPercent", Math.round(((double) usedMemory / maxMemory) * 1000.0) / 10.0);
+        response.put("heap", heap);
+
+        // Metaspace usage
+        long metaspaceUsed = -1;
+        for (MemoryPoolMXBean pool : ManagementFactory.getMemoryPoolMXBeans()) {
+            if (pool.getName().contains("Metaspace")) {
+                metaspaceUsed = pool.getUsage().getUsed();
+                break;
+            }
+        }
+        if (metaspaceUsed != -1) {
+            response.put("metaspaceUsedMb", Math.round(metaspaceUsed / (1024.0 * 1024.0) * 10.0) / 10.0);
+        }
+
+        // Thread count
+        ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+        response.put("threadCount", threadBean.getThreadCount());
+        response.put("peakThreadCount", threadBean.getPeakThreadCount());
+
+        // Garbage collection stats
+        long totalGcCount = 0;
+        long totalGcTimeMs = 0;
+        for (GarbageCollectorMXBean gc : ManagementFactory.getGarbageCollectorMXBeans()) {
+            long count = gc.getCollectionCount();
+            if (count > 0) totalGcCount += count;
+            long time = gc.getCollectionTime();
+            if (time > 0) totalGcTimeMs += time;
+        }
+        Map<String, Object> gcInfo = new LinkedHashMap<>();
+        gcInfo.put("collectionCount", totalGcCount);
+        gcInfo.put("collectionTimeMs", totalGcTimeMs);
+        response.put("garbageCollection", gcInfo);
+
+        // Active concurrency counters
+        RepoIndexingService indexingService = repoIndexingServiceProvider.getIfAvailable();
+        ArchitectureAnalysisService archService = architectureAnalysisServiceProvider.getIfAvailable();
+        response.put("activeIndexingJobs", indexingService != null ? indexingService.getActiveIndexingCount() : 0);
+        response.put("activeArchitectureJobs", archService != null ? archService.getActiveAnalysisCount() : 0);
+
+        return ResponseEntity.ok(response);
+    }
+}

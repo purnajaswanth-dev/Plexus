@@ -35,6 +35,11 @@ public class ArchitectureAnalysisService {
     private final org.springframework.beans.factory.ObjectProvider<CodeCityService> codeCityServiceProvider;
     private final org.springframework.transaction.PlatformTransactionManager transactionManager;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    private final java.util.concurrent.atomic.AtomicInteger activeAnalysisJobs = new java.util.concurrent.atomic.AtomicInteger(0);
+
+    public int getActiveAnalysisCount() {
+        return activeAnalysisJobs.get();
+    }
 
     private static final int MAX_FILES_TO_ANALYZE = 1000;
 
@@ -67,188 +72,199 @@ public class ArchitectureAnalysisService {
 
         log.info("Analyzing architecture for {}/{} (branch: {})...", owner, repoName, branch);
 
-        GitTreeResult treeResult = gitHubService.fetchFileTree(owner, repoName, branch);
-        List<String> allFiles = treeResult.getFilePaths();
-
-        if (allFiles.isEmpty()) {
-            log.warn("No files found in tree for {}/{}", owner, repoName);
-            return null;
-        }
-
-        // Filter relevant source files
-        List<String> sourceFiles = filterSourceFiles(allFiles, repository.getDependencyFileType());
-        if (sourceFiles.size() > MAX_FILES_TO_ANALYZE) {
-            sourceFiles = sourceFiles.subList(0, MAX_FILES_TO_ANALYZE);
-        }
-
-        log.info("Found {} candidate source files for architecture analysis in {}", sourceFiles.size(),
-                repository.getRepoName());
-
-        // Fast In-Memory Ingestion: Download repository archive in 1 request
-        Map<String, String> archiveFiles = Collections.emptyMap();
+        activeAnalysisJobs.incrementAndGet();
         try {
-            archiveFiles = gitHubService.downloadRepositoryArchive(owner, repoName, branch);
-            log.info("Archive ingestion ready for {}/{} with {} files extracted", owner, repoName, archiveFiles.size());
-        } catch (Exception ex) {
-            log.warn("Archive download fallback to individual file fetch for {}/{}: {}", owner, repoName,
-                    ex.getMessage());
-        }
+            GitTreeResult treeResult = gitHubService.fetchFileTree(owner, repoName, branch);
+            List<String> allFiles = treeResult.getFilePaths();
 
-        ArchitectureSnapshot snapshot = ArchitectureSnapshot.builder()
-                .repository(repository)
-                .commitSha(treeResult.getCommitSha())
-                .analyzedAt(LocalDateTime.now())
-                .primaryLanguage(repository.getLanguage())
-                .status("ANALYZED")
-                .totalFilesAnalyzed(sourceFiles.size())
-                .build();
+            if (allFiles.isEmpty()) {
+                log.warn("No files found in tree for {}/{}", owner, repoName);
+                return null;
+            }
 
-        // Map to deduplicate nodes by key
-        Map<String, ArchitectureNode> nodeMap = new LinkedHashMap<>();
-        // Root Repository Node
-        String repoNodeKey = "repo:" + repository.getRepoName();
-        ArchitectureNode repoNode = ArchitectureNode.builder()
-                .snapshot(snapshot)
-                .nodeKey(repoNodeKey)
-                .name(repository.getRepoName())
-                .nodeType("REPOSITORY")
-                .filePath("/")
-                .packageOrModule("Root")
-                .evidenceConfidence("DIRECTLY_DETECTED")
-                .level(1)
-                .build();
-        nodeMap.put(repoNodeKey, repoNode);
+            // Filter relevant source files
+            List<String> sourceFiles = filterSourceFiles(allFiles, repository.getDependencyFileType());
+            if (sourceFiles.size() > MAX_FILES_TO_ANALYZE) {
+                sourceFiles = sourceFiles.subList(0, MAX_FILES_TO_ANALYZE);
+            }
 
-        List<ArchitectureEdge> edgeList = new ArrayList<>();
+            log.info("Found {} candidate source files for architecture analysis in {}", sourceFiles.size(),
+                    repository.getRepoName());
 
-        for (String filePath : sourceFiles) {
+            // Fast In-Memory Ingestion: Download repository archive in 1 request
+            Map<String, String> archiveFiles = new HashMap<>();
             try {
-                String content = archiveFiles.get(filePath);
-                if (content == null || content.isBlank()) {
-                    content = gitHubService.fetchFileContent(owner, repoName, branch, filePath);
+                Map<String, String> downloaded = gitHubService.downloadRepositoryArchive(owner, repoName, branch);
+                if (downloaded != null) {
+                    archiveFiles.putAll(downloaded);
                 }
-                if (content == null || content.isBlank())
-                    continue;
+                log.info("Archive ingestion ready for {}/{} with {} files extracted", owner, repoName, archiveFiles.size());
+            } catch (Exception ex) {
+                log.warn("Archive download fallback to individual file fetch for {}/{}: {}", owner, repoName,
+                        ex.getMessage());
+            }
 
-                JavaSourceAnalysisService.AnalysisResult fileResult;
-                if (filePath.endsWith(".java")) {
-                    fileResult = javaAnalysisService.analyzeJavaFile(filePath, content, snapshot);
-                    if (fileResult.nodes.isEmpty()) {
+            ArchitectureSnapshot snapshot = ArchitectureSnapshot.builder()
+                    .repository(repository)
+                    .commitSha(treeResult.getCommitSha())
+                    .analyzedAt(LocalDateTime.now())
+                    .primaryLanguage(repository.getLanguage())
+                    .status("ANALYZED")
+                    .totalFilesAnalyzed(sourceFiles.size())
+                    .build();
+
+            // Map to deduplicate nodes by key
+            Map<String, ArchitectureNode> nodeMap = new LinkedHashMap<>();
+            // Root Repository Node
+            String repoNodeKey = "repo:" + repository.getRepoName();
+            ArchitectureNode repoNode = ArchitectureNode.builder()
+                    .snapshot(snapshot)
+                    .nodeKey(repoNodeKey)
+                    .name(repository.getRepoName())
+                    .nodeType("REPOSITORY")
+                    .filePath("/")
+                    .packageOrModule("Root")
+                    .evidenceConfidence("DIRECTLY_DETECTED")
+                    .level(1)
+                    .build();
+            nodeMap.put(repoNodeKey, repoNode);
+
+            List<ArchitectureEdge> edgeList = new ArrayList<>();
+
+            for (String filePath : sourceFiles) {
+                try {
+                    // Evict from map immediately after retrieval to free string heap memory progressively
+                    String content = archiveFiles.remove(filePath);
+                    if (content == null || content.isBlank()) {
+                        content = gitHubService.fetchFileContent(owner, repoName, branch, filePath);
+                    }
+                    if (content == null || content.isBlank())
+                        continue;
+
+                    JavaSourceAnalysisService.AnalysisResult fileResult;
+                    if (filePath.endsWith(".java")) {
+                        fileResult = javaAnalysisService.analyzeJavaFile(filePath, content, snapshot);
+                        if (fileResult.nodes.isEmpty()) {
+                            fileResult = createBasicFileResult(filePath, content, snapshot);
+                        }
+                    } else if (filePath.endsWith(".js") || filePath.endsWith(".ts") || filePath.endsWith(".jsx")
+                            || filePath.endsWith(".tsx")) {
+                        fileResult = jsAnalysisService.analyzeJsFile(filePath, content, snapshot);
+                        if (fileResult.nodes.isEmpty()) {
+                            fileResult = createBasicFileResult(filePath, content, snapshot);
+                        }
+                    } else {
                         fileResult = createBasicFileResult(filePath, content, snapshot);
                     }
-                } else if (filePath.endsWith(".js") || filePath.endsWith(".ts") || filePath.endsWith(".jsx")
-                        || filePath.endsWith(".tsx")) {
-                    fileResult = jsAnalysisService.analyzeJsFile(filePath, content, snapshot);
-                    if (fileResult.nodes.isEmpty()) {
-                        fileResult = createBasicFileResult(filePath, content, snapshot);
+
+                    for (ArchitectureNode n : fileResult.nodes) {
+                        nodeMap.putIfAbsent(n.getNodeKey(), n);
                     }
-                } else {
-                    fileResult = createBasicFileResult(filePath, content, snapshot);
-                }
+                    edgeList.addAll(fileResult.edges);
 
-                for (ArchitectureNode n : fileResult.nodes) {
-                    nodeMap.putIfAbsent(n.getNodeKey(), n);
-                }
-                edgeList.addAll(fileResult.edges);
-
-                // Connect level 1 nodes to root repository
-                for (ArchitectureNode n : fileResult.nodes) {
-                    if (n.getLevel() != null && n.getLevel() == 1) {
-                        edgeList.add(ArchitectureEdge.builder()
-                                .snapshot(snapshot)
-                                .sourceNodeKey(repoNodeKey)
-                                .targetNodeKey(n.getNodeKey())
-                                .relationshipType("CONTAINS")
-                                .evidence("Repository structural layout")
-                                .evidenceLevel("DIRECTLY_DETECTED")
-                                .build());
+                    // Connect level 1 nodes to root repository
+                    for (ArchitectureNode n : fileResult.nodes) {
+                        if (n.getLevel() != null && n.getLevel() == 1) {
+                            edgeList.add(ArchitectureEdge.builder()
+                                    .snapshot(snapshot)
+                                    .sourceNodeKey(repoNodeKey)
+                                    .targetNodeKey(n.getNodeKey())
+                                    .relationshipType("CONTAINS")
+                                    .evidence("Repository structural layout")
+                                    .evidenceLevel("DIRECTLY_DETECTED")
+                                    .build());
+                        }
                     }
+
+                } catch (Exception e) {
+                    log.warn("Error analyzing source file {}: {}", filePath, e.getMessage());
                 }
-
-            } catch (Exception e) {
-                log.warn("Error analyzing source file {}: {}", filePath, e.getMessage());
             }
-        }
 
-        // Deduplicate edges
-        Set<String> seenEdges = new HashSet<>();
-        List<ArchitectureEdge> cleanEdges = new ArrayList<>();
-        for (ArchitectureEdge edge : edgeList) {
-            String edgeKey = edge.getSourceNodeKey() + "->" + edge.getTargetNodeKey() + ":"
-                    + edge.getRelationshipType();
-            if (seenEdges.add(edgeKey)) {
-                cleanEdges.add(edge);
+            // Immediately purge any unconsumed archive entries before DB batching & city layout calculation
+            archiveFiles.clear();
+
+            // Deduplicate edges
+            Set<String> seenEdges = new HashSet<>();
+            List<ArchitectureEdge> cleanEdges = new ArrayList<>();
+            for (ArchitectureEdge edge : edgeList) {
+                String edgeKey = edge.getSourceNodeKey() + "->" + edge.getTargetNodeKey() + ":"
+                        + edge.getRelationshipType();
+                if (seenEdges.add(edgeKey)) {
+                    cleanEdges.add(edge);
+                }
             }
-        }
 
-        // Atomic Compact Persistence: Only hold DB connection during instant batch
-        // saves
-        final List<String> finalSourceFiles = sourceFiles;
-        org.springframework.transaction.support.TransactionTemplate tx = new org.springframework.transaction.support.TransactionTemplate(
-                transactionManager);
-        ArchitectureSnapshot savedSnapshot = tx.execute(status -> {
-            ArchitectureSnapshot snap = snapshotRepository.save(snapshot);
-            List<ArchitectureNode> nodesToInsert = new ArrayList<>(nodeMap.values());
+            // Atomic Compact Persistence: Only hold DB connection during instant batch saves
+            final List<String> finalSourceFiles = sourceFiles;
+            org.springframework.transaction.support.TransactionTemplate tx = new org.springframework.transaction.support.TransactionTemplate(
+                    transactionManager);
+            ArchitectureSnapshot savedSnapshot = tx.execute(status -> {
+                ArchitectureSnapshot snap = snapshotRepository.save(snapshot);
+                List<ArchitectureNode> nodesToInsert = new ArrayList<>(nodeMap.values());
 
-            String nodeSql = "INSERT INTO architecture_nodes (snapshot_id, node_key, name, node_type, file_path, package_or_module, annotations_json, start_line, end_line, evidence_confidence, level) "
-                    +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            jdbcTemplate.batchUpdate(nodeSql, nodesToInsert, 100, (ps, n) -> {
-                ps.setLong(1, snap.getId());
-                ps.setString(2, n.getNodeKey());
-                ps.setString(3, n.getName());
-                ps.setString(4, n.getNodeType());
-                ps.setString(5, n.getFilePath());
-                ps.setString(6, n.getPackageOrModule());
-                ps.setString(7, n.getAnnotationsJson());
-                if (n.getStartLine() != null)
-                    ps.setInt(8, n.getStartLine());
-                else
-                    ps.setNull(8, java.sql.Types.INTEGER);
-                if (n.getEndLine() != null)
-                    ps.setInt(9, n.getEndLine());
-                else
-                    ps.setNull(9, java.sql.Types.INTEGER);
-                ps.setString(10, n.getEvidenceConfidence());
-                if (n.getLevel() != null)
-                    ps.setInt(11, n.getLevel());
-                else
-                    ps.setNull(11, java.sql.Types.INTEGER);
+                String nodeSql = "INSERT INTO architecture_nodes (snapshot_id, node_key, name, node_type, file_path, package_or_module, annotations_json, start_line, end_line, evidence_confidence, level) "
+                        +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                jdbcTemplate.batchUpdate(nodeSql, nodesToInsert, 100, (ps, n) -> {
+                    ps.setLong(1, snap.getId());
+                    ps.setString(2, n.getNodeKey());
+                    ps.setString(3, n.getName());
+                    ps.setString(4, n.getNodeType());
+                    ps.setString(5, n.getFilePath());
+                    ps.setString(6, n.getPackageOrModule());
+                    ps.setString(7, n.getAnnotationsJson());
+                    if (n.getStartLine() != null)
+                        ps.setInt(8, n.getStartLine());
+                    else
+                        ps.setNull(8, java.sql.Types.INTEGER);
+                    if (n.getEndLine() != null)
+                        ps.setInt(9, n.getEndLine());
+                    else
+                        ps.setNull(9, java.sql.Types.INTEGER);
+                    ps.setString(10, n.getEvidenceConfidence());
+                    if (n.getLevel() != null)
+                        ps.setInt(11, n.getLevel());
+                    else
+                        ps.setNull(11, java.sql.Types.INTEGER);
+                });
+
+                String edgeSql = "INSERT INTO architecture_edges (snapshot_id, source_node_key, target_node_key, relationship_type, evidence, evidence_level) "
+                        +
+                        "VALUES (?, ?, ?, ?, ?, ?)";
+                jdbcTemplate.batchUpdate(edgeSql, cleanEdges, 100, (ps, e) -> {
+                    ps.setLong(1, snap.getId());
+                    ps.setString(2, e.getSourceNodeKey());
+                    ps.setString(3, e.getTargetNodeKey());
+                    ps.setString(4, e.getRelationshipType());
+                    ps.setString(5, e.getEvidence());
+                    ps.setString(6, e.getEvidenceLevel());
+                });
+
+                snap.setTotalComponents(nodesToInsert.size());
+                snap.setTotalRelationships(cleanEdges.size());
+                snap.setAnalysisSummary(String.format(
+                        "Indexed %d source files, detected %d architecture components and %d verified relationships.",
+                        finalSourceFiles.size(), nodesToInsert.size(), cleanEdges.size()));
+
+                ArchitectureSnapshot flushedSnap = snapshotRepository.save(snap);
+                log.info("Architecture analysis complete for {}: {} nodes, {} edges.", repository.getRepoName(),
+                        nodesToInsert.size(), cleanEdges.size());
+                return flushedSnap;
             });
 
-            String edgeSql = "INSERT INTO architecture_edges (snapshot_id, source_node_key, target_node_key, relationship_type, evidence, evidence_level) "
-                    +
-                    "VALUES (?, ?, ?, ?, ?, ?)";
-            jdbcTemplate.batchUpdate(edgeSql, cleanEdges, 100, (ps, e) -> {
-                ps.setLong(1, snap.getId());
-                ps.setString(2, e.getSourceNodeKey());
-                ps.setString(3, e.getTargetNodeKey());
-                ps.setString(4, e.getRelationshipType());
-                ps.setString(5, e.getEvidence());
-                ps.setString(6, e.getEvidenceLevel());
-            });
-
-            snap.setTotalComponents(nodesToInsert.size());
-            snap.setTotalRelationships(cleanEdges.size());
-            snap.setAnalysisSummary(String.format(
-                    "Indexed %d source files, detected %d architecture components and %d verified relationships.",
-                    finalSourceFiles.size(), nodesToInsert.size(), cleanEdges.size()));
-
-            ArchitectureSnapshot flushedSnap = snapshotRepository.save(snap);
-            log.info("Architecture analysis complete for {}: {} nodes, {} edges.", repository.getRepoName(),
-                    nodesToInsert.size(), cleanEdges.size());
-            return flushedSnap;
-        });
-
-        if (savedSnapshot != null) {
-            try {
-                codeCityServiceProvider.ifAvailable(service -> service.syncCityModel(repository, savedSnapshot));
-            } catch (Exception e) {
-                log.warn("CodeCity model generation skipped for {}: {}", repository.getRepoName(), e.getMessage());
+            if (savedSnapshot != null) {
+                try {
+                    codeCityServiceProvider.ifAvailable(service -> service.syncCityModel(repository, savedSnapshot));
+                } catch (Exception e) {
+                    log.warn("CodeCity model generation skipped for {}: {}", repository.getRepoName(), e.getMessage());
+                }
             }
-        }
 
-        return savedSnapshot;
+            return savedSnapshot;
+        } finally {
+            activeAnalysisJobs.decrementAndGet();
+        }
     }
 
     private static String truncate(String s, int maxLen) {

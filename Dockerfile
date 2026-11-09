@@ -66,10 +66,11 @@ WORKDIR /app
 COPY --from=backend-builder --chown=appuser:appgroup /app/target/*.jar app.jar
 
 # Production JVM tuning for container environments:
-# - UseContainerSupport: Automatically adjusts heap size to cgroup limits
-# - MaxRAMPercentage=75: Prevents Linux OOM-killer while leaving memory for OS/metaspace
-# - ExitOnOutOfMemoryError: Fails fast for container orchestrator restart
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom"
+# - Calibrated for 512MB Render instances (50% max RAM percentage = 256MB heap cap)
+# - Metaspace, CodeCache, DirectMemory, and ThreadStack bounds prevent non-heap Linux cgroup OOM kills
+# - UseSerialGC eliminates multi-threaded GC card-table overhead on single/fractional CPU containers
+# - Overrideable via Render Dashboard environment variable JAVA_OPTS for 2GB+ tiers
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=50.0 -XX:InitialRAMPercentage=25.0 -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=48m -XX:MaxDirectMemorySize=16m -Xss512k -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom"
 ENV PORT=8080
 
 # Expose HTTP port (Render dynamically sets PORT at runtime)

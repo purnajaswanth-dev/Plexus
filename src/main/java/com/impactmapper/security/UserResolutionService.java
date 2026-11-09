@@ -64,6 +64,14 @@ public class UserResolutionService {
                     return appUserRepository.save(newUser);
                 });
 
+        if (userCache.size() > 50) {
+            userCache.entrySet().removeIf(entry -> {
+                Long ts = userCacheTimestamp.get(entry.getKey());
+                return ts == null || (now - ts) >= 300_000L;
+            });
+            userCacheTimestamp.keySet().retainAll(userCache.keySet());
+        }
+
         userCache.put(supabaseUserId, resolvedUser);
         userCacheTimestamp.put(supabaseUserId, now);
         return resolvedUser;
