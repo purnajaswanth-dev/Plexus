@@ -15,6 +15,25 @@
     <link rel="stylesheet" href="/css/components.css">
     <link rel="stylesheet" href="/css/pages.css">
     <link rel="stylesheet" href="/graph-dist/graph-explorer.css">
+
+    <!-- Pre-fetch public Supabase auth configuration before ES modules execute -->
+    <script>
+        (function() {
+            try {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', '/api/auth/config', false);
+                xhr.send();
+                if (xhr.status === 200) {
+                    var cfg = JSON.parse(xhr.responseText);
+                    window.__SUPABASE_CONFIG__ = cfg;
+                    if (cfg.supabaseUrl) window.__SUPABASE_URL__ = cfg.supabaseUrl;
+                    if (cfg.supabasePublishableKey) window.__SUPABASE_PUBLISHABLE_KEY__ = cfg.supabasePublishableKey;
+                }
+            } catch (e) {
+                console.warn('Could not prefetch /api/auth/config:', e);
+            }
+        })();
+    </script>
 </head>
 <body>
 

@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: plexus-impact-mapper
+    runtime: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # Render dynamically provides PORT, Spring Boot defaults to ${PORT:8080}
+      - key: PORT
+        value: 10000
+
+      # Database Configuration (Neon PostgreSQL) - Values configured via Render Dashboard
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+
+      # Supabase OAuth2 / JWT Configuration
+      - key: SUPABASE_JWT_ISSUER_URI
+        sync: false
+      - key: SUPABASE_JWKS_URI
+        sync: false
+
+      # Supabase Client Public Configuration
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+
+      # Vite Frontend Build Arguments (automatically provided as Docker build args)
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_API_BASE_URL
+        value: ""
+
+      # Optional GitHub Personal Access Token (for extended rate limits)
+      - key: GITHUB_TOKEN
+        sync: false
+

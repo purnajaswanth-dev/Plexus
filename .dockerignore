@@ -1,0 +1,43 @@
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+
+# Environment & Secrets (NEVER bake into image)
+.env
+.env.*
+*.env
+*.pem
+*.key
+
+# Build outputs
+target/
+frontend/node_modules/
+frontend/dist/
+node_modules/
+
+# IDE & Editor artifacts
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+.fleet/
+
+# Temporary / OS files
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+tmp/
+temp/
+
+# Antigravity artifacts
+.gemini/
+scratch/
+.system_generated/
+
