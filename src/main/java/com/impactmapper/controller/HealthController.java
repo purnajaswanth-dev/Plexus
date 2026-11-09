@@ -105,14 +105,25 @@ public class HealthController {
 
         // Metaspace usage
         long metaspaceUsed = -1;
+        long metaspaceCommitted = -1;
         for (MemoryPoolMXBean pool : ManagementFactory.getMemoryPoolMXBeans()) {
             if (pool.getName().contains("Metaspace")) {
                 metaspaceUsed = pool.getUsage().getUsed();
+                metaspaceCommitted = pool.getUsage().getCommitted();
                 break;
             }
         }
         if (metaspaceUsed != -1) {
             response.put("metaspaceUsedMb", Math.round(metaspaceUsed / (1024.0 * 1024.0) * 10.0) / 10.0);
+            response.put("metaspaceCommittedMb", Math.round(metaspaceCommitted / (1024.0 * 1024.0) * 10.0) / 10.0);
+        }
+
+        // Reliable Linux container RSS detection (cgroup v2 / v1 / /proc/self/status)
+        Long containerRssBytes = readContainerRssBytes();
+        if (containerRssBytes != null) {
+            response.put("containerRssMb", Math.round(containerRssBytes / (1024.0 * 1024.0) * 10.0) / 10.0);
+        } else {
+            response.put("containerRssMb", null);
         }
 
         // Thread count
@@ -141,5 +152,43 @@ public class HealthController {
         response.put("activeArchitectureJobs", archService != null ? archService.getActiveAnalysisCount() : 0);
 
         return ResponseEntity.ok(response);
+    }
+
+    private Long readContainerRssBytes() {
+        // Try cgroup v2
+        try {
+            java.nio.file.Path p2 = java.nio.file.Paths.get("/sys/fs/cgroup/memory.current");
+            if (java.nio.file.Files.exists(p2)) {
+                String val = java.nio.file.Files.readString(p2).trim();
+                return Long.parseLong(val);
+            }
+        } catch (Exception ignored) {}
+
+        // Try cgroup v1
+        try {
+            java.nio.file.Path p1 = java.nio.file.Paths.get("/sys/fs/cgroup/memory/memory.usage_in_bytes");
+            if (java.nio.file.Files.exists(p1)) {
+                String val = java.nio.file.Files.readString(p1).trim();
+                return Long.parseLong(val);
+            }
+        } catch (Exception ignored) {}
+
+        // Try /proc/self/status (VmRSS line)
+        try {
+            java.nio.file.Path procStatus = java.nio.file.Paths.get("/proc/self/status");
+            if (java.nio.file.Files.exists(procStatus)) {
+                for (String line : java.nio.file.Files.readAllLines(procStatus)) {
+                    if (line.startsWith("VmRSS:")) {
+                        String[] parts = line.split("\\s+");
+                        if (parts.length >= 2) {
+                            long kb = Long.parseLong(parts[1]);
+                            return kb * 1024L;
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+
+        return null;
     }
 }

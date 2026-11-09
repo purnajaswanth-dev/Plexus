@@ -2,7 +2,7 @@ services:
   - type: web
     name: plexus-impact-mapper
     runtime: docker
-    plan: starter
+    plan: free
     region: oregon
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health

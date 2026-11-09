@@ -35,7 +35,10 @@ public class ArchitectureAnalysisService {
     private final org.springframework.beans.factory.ObjectProvider<CodeCityService> codeCityServiceProvider;
     private final org.springframework.transaction.PlatformTransactionManager transactionManager;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    private final org.springframework.beans.factory.ObjectProvider<com.impactmapper.config.IndexingResourceLimits> resourceLimitsProvider;
     private final java.util.concurrent.atomic.AtomicInteger activeAnalysisJobs = new java.util.concurrent.atomic.AtomicInteger(0);
+    private final java.util.concurrent.Semaphore globalAnalysisSemaphore = new java.util.concurrent.Semaphore(1);
+    private final java.util.concurrent.ConcurrentHashMap<Long, java.util.concurrent.CompletableFuture<ArchitectureSnapshot>> inFlightAnalysis = new java.util.concurrent.ConcurrentHashMap<>();
 
     public int getActiveAnalysisCount() {
         return activeAnalysisJobs.get();
@@ -70,22 +73,58 @@ public class ArchitectureAnalysisService {
         }
         String branch = repository.getDefaultBranch() != null ? repository.getDefaultBranch() : "main";
 
+        Long repoId = repository.getId();
+        if (repoId != null) {
+            java.util.concurrent.CompletableFuture<ArchitectureSnapshot> inFlight = inFlightAnalysis.get(repoId);
+            if (inFlight != null) {
+                log.info("Deduplicating concurrent architecture analysis request for repository ID: {}", repoId);
+                try {
+                    return inFlight.join();
+                } catch (Exception e) {
+                    log.warn("In-flight architecture analysis failed for repoId {}: {}", repoId, e.getMessage());
+                }
+            }
+        }
+
+        boolean permitAcquired = false;
+        java.util.concurrent.CompletableFuture<ArchitectureSnapshot> future = new java.util.concurrent.CompletableFuture<>();
+        if (repoId != null) {
+            inFlightAnalysis.put(repoId, future);
+        }
+
         log.info("Analyzing architecture for {}/{} (branch: {})...", owner, repoName, branch);
 
         activeAnalysisJobs.incrementAndGet();
         try {
+            permitAcquired = globalAnalysisSemaphore.tryAcquire(5, java.util.concurrent.TimeUnit.SECONDS);
+            if (!permitAcquired) {
+                log.warn("Architecture analysis rejected for {}: another analysis job is currently executing.", repository.getRepoName());
+                throw new IllegalStateException("An architecture analysis job is currently in progress. Capacity is limited to 1 concurrent analysis job on the free tier. Please retry in a few moments.");
+            }
+
             GitTreeResult treeResult = gitHubService.fetchFileTree(owner, repoName, branch);
             List<String> allFiles = treeResult.getFilePaths();
 
             if (allFiles.isEmpty()) {
                 log.warn("No files found in tree for {}/{}", owner, repoName);
+                future.complete(null);
                 return null;
             }
 
             // Filter relevant source files
             List<String> sourceFiles = filterSourceFiles(allFiles, repository.getDependencyFileType());
-            if (sourceFiles.size() > MAX_FILES_TO_ANALYZE) {
-                sourceFiles = sourceFiles.subList(0, MAX_FILES_TO_ANALYZE);
+            int maxAllowedFiles = (resourceLimitsProvider != null && resourceLimitsProvider.getIfAvailable() != null)
+                    ? resourceLimitsProvider.getIfAvailable().getMaxSourceFiles()
+                    : 150;
+            if (sourceFiles.size() > maxAllowedFiles) {
+                String errorMsg = String.format("Architecture analysis rejected: repository contains %d candidate source files (free-tier limit: %d files).",
+                        sourceFiles.size(), maxAllowedFiles);
+                log.warn(errorMsg);
+                com.impactmapper.exception.RepositoryResourceLimitExceededException limitEx =
+                        new com.impactmapper.exception.RepositoryResourceLimitExceededException(
+                                "MAX_SOURCE_FILES", sourceFiles.size(), maxAllowedFiles, "files", errorMsg);
+                future.completeExceptionally(limitEx);
+                throw limitEx;
             }
 
             log.info("Found {} candidate source files for architecture analysis in {}", sourceFiles.size(),
@@ -99,6 +138,9 @@ public class ArchitectureAnalysisService {
                     archiveFiles.putAll(downloaded);
                 }
                 log.info("Archive ingestion ready for {}/{} with {} files extracted", owner, repoName, archiveFiles.size());
+            } catch (com.impactmapper.exception.RepositoryResourceLimitExceededException limitEx) {
+                future.completeExceptionally(limitEx);
+                throw limitEx;
             } catch (Exception ex) {
                 log.warn("Archive download fallback to individual file fetch for {}/{}: {}", owner, repoName,
                         ex.getMessage());
@@ -261,8 +303,25 @@ public class ArchitectureAnalysisService {
                 }
             }
 
+            future.complete(savedSnapshot);
             return savedSnapshot;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            future.completeExceptionally(e);
+            throw new IllegalStateException("Architecture analysis interrupted while waiting for capacity", e);
+        } catch (RuntimeException e) {
+            future.completeExceptionally(e);
+            throw e;
+        } catch (Exception e) {
+            future.completeExceptionally(e);
+            throw new RuntimeException("Architecture analysis failed: " + e.getMessage(), e);
         } finally {
+            if (repoId != null) {
+                inFlightAnalysis.remove(repoId);
+            }
+            if (permitAcquired) {
+                globalAnalysisSemaphore.release();
+            }
             activeAnalysisJobs.decrementAndGet();
         }
     }

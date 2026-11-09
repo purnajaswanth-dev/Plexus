@@ -32,7 +32,16 @@ const API = {
             const data = await response.json().catch(() => null);
 
             if (!response.ok) {
-                const message = (data && data.error) ? data.error : `HTTP ${response.status}: ${response.statusText}`;
+                let message;
+                if (data && data.error === 'RESOURCE_LIMIT_EXCEEDED') {
+                    message = `Free Tier Limit: ${data.message}`;
+                } else if (data && data.error === 'CONCURRENCY_LIMIT_REACHED') {
+                    message = `Server Busy: ${data.message}`;
+                } else if (data && data.error) {
+                    message = data.error;
+                } else {
+                    message = `HTTP ${response.status}: ${response.statusText}`;
+                }
                 throw new Error(message);
             }
 

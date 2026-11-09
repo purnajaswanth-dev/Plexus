@@ -51,14 +51,14 @@ Configure the following environment variables in the Render Dashboard under **En
 Configure the service with the following settings:
 
 * **Name:** `plexus-impact-mapper`
-* **Region:** Select the region closest to your Neon database (e.g. `Oregon (US West)` or `Frankfurt (EU Central)`).
+* **Region:** Select the region closest to your Neon database (e.g. `Ohio (US East)` if creating new, or your existing service region `Oregon (US West)`).
 * **Branch:** `main` (or your active release branch).
 * **Root Directory:** *(leave blank — root of repository)*.
 * **Runtime:** Select **Docker**.
 * **Dockerfile Path:** `./Dockerfile`
-* **Instance Type:** Select **Starter** ($7/mo, 512 MB RAM, 0.5 CPU) or **Standard** ($25/mo, 2 GB RAM).
-  > [!TIP]
-  > While Plexus runs within 512 MB RAM with our optimized JRE container, the **Starter (512MB)** or **Standard (1-2GB)** plan is strongly recommended for AST parsing of large repositories.
+* **Instance Type:** Select **Free** ($0/month, 512 MB RAM, 0.5 CPU).
+  > [!NOTE]
+  > Plexus is optimized for the **$0/month Free Tier** with hard-coded resource guards (max 150 source files per repo, max 15MB archive, 256MB heap cap, SerialGC, and single-job serialization). See [`docs/FREE_TIER_DEPLOYMENT_LIMITATIONS.md`](file:///c:/Users/sunka/OneDrive/coding/dependency/docs/FREE_TIER_DEPLOYMENT_LIMITATIONS.md) for details.
 
 #### Step 3: Configure Health Check Path
 Under **Advanced Settings**:

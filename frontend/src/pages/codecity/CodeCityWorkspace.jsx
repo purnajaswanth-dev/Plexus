@@ -85,12 +85,22 @@ const CodeCityWorkspaceInner = ({
   const [intelligenceOpen, setIntelligenceOpen] = useState(false);
   const [intelligenceData, setIntelligenceData] = useState(null);
 
+  // Lazy-load Architecture Intelligence only when the drawer is actually opened
   useEffect(() => {
-    if (!selectedRepoId) return;
+    if (!intelligenceOpen || !selectedRepoId) return;
+    if (intelligenceData && intelligenceData.repositoryId === selectedRepoId) return;
+
+    let isMounted = true;
     codecityApi.getArchitectureIntelligence(selectedRepoId)
-      .then(setIntelligenceData)
-      .catch(() => setIntelligenceData(null));
-  }, [selectedRepoId]);
+      .then(data => {
+        if (isMounted) setIntelligenceData(data);
+      })
+      .catch(() => {
+        if (isMounted) setIntelligenceData(null);
+      });
+
+    return () => { isMounted = false; };
+  }, [intelligenceOpen, selectedRepoId]);
 
   // UI view controls
   const [rendererMode, setRendererMode] = useState('metropolis'); // 'metropolis' | 'diagram'
@@ -108,7 +118,7 @@ const CodeCityWorkspaceInner = ({
     return repositories.find(r => r.id === selectedRepoId) || null;
   }, [repositories, selectedRepoId]);
 
-  // Load repositories list
+  // Load repositories list once on component mount
   useEffect(() => {
     codecityApi.getRepositoryCities().then(data => {
       setRepositories(data);
@@ -119,13 +129,13 @@ const CodeCityWorkspaceInner = ({
     }).catch(err => {
       console.error('Failed to load repo list:', err);
     });
-  }, [selectedRepoId]);
+  }, []);
 
-  // Load city model and endpoints when selectedRepoId changes
+  // Load city model and endpoints when selectedRepoId changes with request cancellation
   useEffect(() => {
     if (!selectedRepoId) return;
 
-    let isMounted = true;
+    const controller = new AbortController();
     const loadCity = async () => {
       try {
         setLoading(true);
@@ -136,27 +146,30 @@ const CodeCityWorkspaceInner = ({
         setSelectedEntity(null);
         setImpactMode(null);
         setInspectorOpen(false);
+        // Free previous city geometry memory from client state
+        setCityData(null);
+        setNodes([]);
+        setEdges([]);
 
         const [cityRes, epsRes] = await Promise.all([
-          codecityApi.getCityModel(selectedRepoId),
-          codecityApi.getEndpoints(selectedRepoId).catch(() => [])
+          codecityApi.getCityModel(selectedRepoId, { signal: controller.signal }),
+          codecityApi.getEndpoints(selectedRepoId, { signal: controller.signal }).catch(() => [])
         ]);
 
-        if (!isMounted) return;
+        if (controller.signal.aborted) return;
 
         setCityData(cityRes);
         setEndpoints(epsRes);
-        // CITY FIRST: Do not force auto-selection of endpoints. The metropolis exists and is explored independently.
       } catch (err) {
-        if (!isMounted) return;
+        if (controller.signal.aborted) return;
         setError(err.message);
       } finally {
-        if (isMounted) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     loadCity();
-    return () => { isMounted = false; };
+    return () => { controller.abort(); };
   }, [selectedRepoId]);
 
   // Construct React Flow Nodes and Edges from cityData

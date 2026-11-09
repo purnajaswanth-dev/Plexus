@@ -400,4 +400,52 @@ class CodeCityServiceTest {
         assertEquals("file:app.js", detail.getNodeKey());
         assertEquals("app.js", detail.getName());
     }
+
+    @Test
+    void testCacheBehaviorAndLRUEviction() {
+        when(repositoryRepository.findById(1L)).thenReturn(Optional.of(repoA));
+
+        ArchitectureSnapshot snap1 = ArchitectureSnapshot.builder().id(101L).repository(repoA).status("ANALYZED").analyzedAt(LocalDateTime.now()).build();
+        ArchitectureSnapshot snap2 = ArchitectureSnapshot.builder().id(102L).repository(repoA).status("ANALYZED").analyzedAt(LocalDateTime.now()).build();
+        ArchitectureSnapshot snap3 = ArchitectureSnapshot.builder().id(103L).repository(repoA).status("ANALYZED").analyzedAt(LocalDateTime.now()).build();
+        ArchitectureSnapshot snap4 = ArchitectureSnapshot.builder().id(104L).repository(repoA).status("ANALYZED").analyzedAt(LocalDateTime.now()).build();
+
+        when(nodeRepository.findBySnapshotId(anyLong())).thenReturn(Collections.emptyList());
+        when(edgeRepository.findBySnapshotId(anyLong())).thenReturn(Collections.emptyList());
+        when(runtimeTraceRepository.findByRepositoryIdOrderByRecordedAtDesc(anyLong())).thenReturn(Collections.emptyList());
+
+        // 1. Intelligence Cache Miss on snap1
+        when(snapshotRepository.findTopByRepositoryIdOrderByAnalyzedAtDesc(1L)).thenReturn(Optional.of(snap1));
+        long tStart = System.nanoTime();
+        ArchitectureIntelligenceDTO intel1 = codeCityService.getArchitectureIntelligence(1L);
+        long tMissNanos = System.nanoTime() - tStart;
+        assertNotNull(intel1);
+
+        // 2. Intelligence Cache Hit on snap1
+        tStart = System.nanoTime();
+        ArchitectureIntelligenceDTO intel1Cached = codeCityService.getArchitectureIntelligence(1L);
+        long tHitNanos = System.nanoTime() - tStart;
+        assertSame(intel1, intel1Cached);
+        assertTrue(tHitNanos < 5_000_000, "In-memory cache hit should execute in under 5ms, took: " + (tHitNanos / 1_000_000.0) + "ms");
+
+        // 3. Fill cache to capacity (snap2, snap3)
+        when(snapshotRepository.findTopByRepositoryIdOrderByAnalyzedAtDesc(1L)).thenReturn(Optional.of(snap2));
+        codeCityService.getArchitectureIntelligence(1L);
+        when(snapshotRepository.findTopByRepositoryIdOrderByAnalyzedAtDesc(1L)).thenReturn(Optional.of(snap3));
+        codeCityService.getArchitectureIntelligence(1L);
+
+        // 4. Exceed LRU limit by adding 4th snapshot (snap4) -> snap1 should be evicted!
+        when(snapshotRepository.findTopByRepositoryIdOrderByAnalyzedAtDesc(1L)).thenReturn(Optional.of(snap4));
+        codeCityService.getArchitectureIntelligence(1L);
+
+        // Verify snap1 was evicted: re-querying snap1 creates a fresh DTO rather than returning the same instance
+        when(snapshotRepository.findTopByRepositoryIdOrderByAnalyzedAtDesc(1L)).thenReturn(Optional.of(snap1));
+        ArchitectureIntelligenceDTO intel1AfterEviction = codeCityService.getArchitectureIntelligence(1L);
+        assertNotSame(intel1, intel1AfterEviction, "Eldest entry (snap1) should have been evicted when cache exceeded size 3");
+
+        // 5. Invalidation via syncCityModel: snap1 cached, then invalidated by syncCityModel
+        codeCityService.syncCityModel(repoA, snap1);
+        ArchitectureIntelligenceDTO intel1AfterSync = codeCityService.getArchitectureIntelligence(1L);
+        assertNotSame(intel1AfterEviction, intel1AfterSync, "syncCityModel must invalidate the intelligence cache for that snapshot");
+    }
 }

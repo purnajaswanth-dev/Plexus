@@ -1,11 +1,13 @@
 package com.impactmapper.service;
 
+import com.impactmapper.config.IndexingResourceLimits;
 import com.impactmapper.dto.GitHubRepoInfo;
 import com.impactmapper.dto.GitTreeResult;
 import com.impactmapper.dto.ParsedDep;
 import com.impactmapper.entity.RepoDependency;
 import com.impactmapper.entity.Repository;
 import com.impactmapper.exception.RepoNotFoundException;
+import com.impactmapper.exception.RepositoryResourceLimitExceededException;
 import com.impactmapper.parser.ManifestDiscoveryResult;
 import com.impactmapper.parser.ManifestDiscoveryService;
 import com.impactmapper.repository.RepoDependencyRepository;
@@ -38,6 +40,7 @@ public class RepoIndexingService {
     private final TransactionTemplate transactionTemplate;
     private final AppUserRepository appUserRepository;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    private final IndexingResourceLimits resourceLimits;
     private final ConcurrentHashMap<String, Object> repoLocks = new ConcurrentHashMap<>();
     private final java.util.concurrent.Semaphore globalIndexingSemaphore = new java.util.concurrent.Semaphore(1);
 
@@ -52,7 +55,7 @@ public class RepoIndexingService {
             RepoDependencyRepository dependencyRepository,
             ArchitectureAnalysisService architectureAnalysisService,
             PlatformTransactionManager transactionManager) {
-        this(gitHubService, manifestDiscoveryService, repositoryRepository, dependencyRepository, architectureAnalysisService, transactionManager, null, null);
+        this(gitHubService, manifestDiscoveryService, repositoryRepository, dependencyRepository, architectureAnalysisService, transactionManager, null, null, null);
     }
 
     @Autowired
@@ -64,7 +67,8 @@ public class RepoIndexingService {
             ArchitectureAnalysisService architectureAnalysisService,
             PlatformTransactionManager transactionManager,
             @Autowired(required = false) AppUserRepository appUserRepository,
-            @Autowired(required = false) org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
+            @Autowired(required = false) org.springframework.jdbc.core.JdbcTemplate jdbcTemplate,
+            @Autowired(required = false) IndexingResourceLimits resourceLimits) {
         this.gitHubService = gitHubService;
         this.manifestDiscoveryService = manifestDiscoveryService;
         this.repositoryRepository = repositoryRepository;
@@ -73,6 +77,7 @@ public class RepoIndexingService {
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.appUserRepository = appUserRepository;
         this.jdbcTemplate = jdbcTemplate;
+        this.resourceLimits = resourceLimits != null ? resourceLimits : new IndexingResourceLimits();
     }
 
     public Repository indexRepository(String githubUrl) {
@@ -113,6 +118,54 @@ public class RepoIndexingService {
                 String commitSha = treeResult.getCommitSha();
                 int totalFiles = treePaths != null ? treePaths.size() : 0;
 
+                // Enforce Free Tier Resource Limits: Check analyzable source file count before manifest/archive processing
+                int maxAllowedFiles = resourceLimits != null ? resourceLimits.getMaxSourceFiles() : 150;
+                int analyzableSourceFiles = 0;
+                if (treePaths != null) {
+                    for (String path : treePaths) {
+                        if (gitHubService.isAnalyzableSourceFile(path)) {
+                            analyzableSourceFiles++;
+                        }
+                    }
+                }
+
+                if (analyzableSourceFiles > maxAllowedFiles) {
+                    final int finalAnalyzableCount = analyzableSourceFiles;
+                    final int finalMaxAllowedFiles = maxAllowedFiles;
+                    log.warn("Repository {} rejected: contains {} analyzable source files (free-tier limit: {} files)",
+                            parsed.getFullName(), finalAnalyzableCount, finalMaxAllowedFiles);
+
+                    final AppUser finalOwner = resolveOwner();
+                    transactionTemplate.execute(status -> {
+                        Repository repo;
+                        if (finalOwner != null) {
+                            repo = repositoryRepository.findByOwnerIdAndRepoName(finalOwner.getId(), info.getFullName())
+                                    .orElseGet(() -> Repository.builder().owner(finalOwner).repoName(info.getFullName()).build());
+                            repo.setOwner(finalOwner);
+                        } else {
+                            repo = repositoryRepository.findByRepoName(info.getFullName())
+                                    .orElseGet(() -> Repository.builder().repoName(info.getFullName()).build());
+                        }
+                        repo.setRepoUrl(info.getHtmlUrl());
+                        repo.setDefaultBranch(branch);
+                        repo.setDescription(info.getDescription());
+                        repo.setLanguage(info.getLanguage());
+                        repo.setCommitSha(commitSha);
+                        repo.setTotalFilesDiscovered(totalFiles);
+                        repo.setIndexStatus("FAILED_RESOURCE_LIMIT");
+                        repo.setStatusDetail(String.format("Repository rejected: %d analyzable source files exceeds free-tier limit of %d files.",
+                                finalAnalyzableCount, finalMaxAllowedFiles));
+                        repo.setLastIndexed(LocalDateTime.now());
+                        return repositoryRepository.saveAndFlush(repo);
+                    });
+
+                    throw new RepositoryResourceLimitExceededException(
+                            "MAX_SOURCE_FILES", finalAnalyzableCount, finalMaxAllowedFiles, "files",
+                            String.format("Repository exceeds free-tier limit of %d source files (found %d files). " +
+                                    "To run reliably within Render Free 512MB RAM, repositories must have %d or fewer source files.",
+                                    finalMaxAllowedFiles, finalAnalyzableCount, finalMaxAllowedFiles));
+                }
+
                 // 3. Manifest Discovery and parsing
                 ManifestDiscoveryResult discoveryResult = manifestDiscoveryService.discoverAndParse(
                         gitHubService, owner, repoName, branch, treePaths);
@@ -138,16 +191,7 @@ public class RepoIndexingService {
                 }
 
                 // Resolve authenticated or legacy system owner
-                AppUser appUser = null;
-                if (appUserRepository != null) {
-                    Optional<UserPrincipal> userPrincipalOpt = SecurityUtils.getCurrentUser();
-                    if (userPrincipalOpt.isPresent()) {
-                        appUser = appUserRepository.findById(userPrincipalOpt.get().getAppUserId()).orElse(null);
-                    } else {
-                        appUser = appUserRepository.findById(UUID.fromString("00000000-0000-0000-0000-000000000001")).orElse(null);
-                    }
-                }
-                final AppUser finalOwner = appUser;
+                final AppUser finalOwner = resolveOwner();
 
                 // 4. Atomic Database Update inside explicit TransactionTemplate
                 Repository repository = transactionTemplate.execute(status -> {
@@ -225,6 +269,9 @@ public class RepoIndexingService {
 
                 return repository;
             }
+        } catch (RepositoryResourceLimitExceededException ex) {
+            log.warn("Indexing rejected due to resource limit for {}: {}", parsed.getFullName(), ex.getMessage());
+            throw ex;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Indexing interrupted while waiting for permit", e);
@@ -251,5 +298,12 @@ public class RepoIndexingService {
                 log.error("Failed to re-index {}: {}", repo.getRepoName(), e.getMessage());
             }
         }
+    }
+
+    private AppUser resolveOwner() {
+        if (appUserRepository == null) return null;
+        return SecurityUtils.getCurrentUser()
+                .map(u -> appUserRepository.findById(u.getAppUserId()).orElse(null))
+                .orElseGet(() -> appUserRepository.findById(UUID.fromString("00000000-0000-0000-0000-000000000001")).orElse(null));
     }
 }

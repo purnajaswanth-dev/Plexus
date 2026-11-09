@@ -18,14 +18,14 @@ export const codecityApi = {
     return fetch(url, { ...options, headers });
   },
 
-  async getRepositoryCities() {
-    const res = await this.fetchWithAuth(`${this.baseUrl}/repositories`);
+  async getRepositoryCities(options = {}) {
+    const res = await this.fetchWithAuth(`${this.baseUrl}/repositories`, options);
     if (!res.ok) throw new Error(`Failed to load repository cities: ${res.statusText}`);
     return res.json();
   },
 
-  async getCityModel(repositoryId) {
-    const res = await this.fetchWithAuth(`${this.baseUrl}/repositories/${repositoryId}/city`);
+  async getCityModel(repositoryId, options = {}) {
+    const res = await this.fetchWithAuth(`${this.baseUrl}/repositories/${repositoryId}/city`, options);
     if (!res.ok) {
       const err = await res.json().catch(() => null);
       throw new Error((err && err.error) || `Failed to load city model: ${res.statusText}`);
@@ -33,8 +33,8 @@ export const codecityApi = {
     return res.json();
   },
 
-  async getEndpoints(repositoryId) {
-    const res = await this.fetchWithAuth(`${this.baseUrl}/repositories/${repositoryId}/endpoints`);
+  async getEndpoints(repositoryId, options = {}) {
+    const res = await this.fetchWithAuth(`${this.baseUrl}/repositories/${repositoryId}/endpoints`, options);
     if (!res.ok) throw new Error(`Failed to load endpoints: ${res.statusText}`);
     return res.json();
   },

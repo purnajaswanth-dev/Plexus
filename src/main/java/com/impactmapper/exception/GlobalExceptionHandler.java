@@ -12,6 +12,34 @@ import java.util.Map;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(RepositoryResourceLimitExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleResourceLimitExceeded(RepositoryResourceLimitExceededException ex) {
+        log.warn("Repository resource limit exceeded: limit={}, actual={}, max={}, unit={}. Message: {}",
+                ex.getLimitType(), ex.getActualValue(), ex.getLimitValue(), ex.getUnit(), ex.getMessage());
+        Map<String, Object> error = new java.util.LinkedHashMap<>();
+        error.put("error", "RESOURCE_LIMIT_EXCEEDED");
+        error.put("limitType", ex.getLimitType());
+        error.put("actualValue", ex.getActualValue());
+        error.put("limitValue", ex.getLimitValue());
+        error.put("unit", ex.getUnit());
+        error.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalStateException(IllegalStateException ex) {
+        String msg = ex.getMessage() != null ? ex.getMessage() : "Invalid application state";
+        Map<String, Object> error = new java.util.LinkedHashMap<>();
+        if (msg.contains("in progress") || msg.contains("capacity") || msg.contains("concurrent")) {
+            log.warn("Request rejected due to concurrency limit: {}", msg);
+            error.put("error", "CONCURRENCY_LIMIT_REACHED");
+            error.put("message", msg);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(error);
+        }
+        error.put("error", msg);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException ex) {
         Map<String, String> error = new HashMap<>();

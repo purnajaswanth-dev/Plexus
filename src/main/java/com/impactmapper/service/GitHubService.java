@@ -1,10 +1,13 @@
 package com.impactmapper.service;
 
+import com.impactmapper.config.IndexingResourceLimits;
 import com.impactmapper.dto.GitHubRepoInfo;
 import com.impactmapper.exception.GitHubApiException;
 import com.impactmapper.exception.RepoNotFoundException;
+import com.impactmapper.exception.RepositoryResourceLimitExceededException;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -33,7 +36,12 @@ public class GitHubService {
     @Value("${github.token:}")
     private String githubToken;
 
+    private final IndexingResourceLimits resourceLimits;
     private final RestTemplate restTemplate = new RestTemplate();
+
+    public GitHubService(@Autowired(required = false) IndexingResourceLimits resourceLimits) {
+        this.resourceLimits = resourceLimits != null ? resourceLimits : new IndexingResourceLimits();
+    }
 
     private HttpHeaders buildHeaders(boolean withAuth) {
         HttpHeaders headers = new HttpHeaders();
@@ -278,6 +286,8 @@ public class GitHubService {
             if (files != null && !files.isEmpty()) {
                 return files;
             }
+        } catch (RepositoryResourceLimitExceededException e) {
+            throw e;
         } catch (Exception e) {
             log.warn("Authenticated zipball download failed for {}/{}: {}. Retrying unauthenticated...", owner, repoName, e.getMessage());
             try {
@@ -285,6 +295,8 @@ public class GitHubService {
                 if (files != null && !files.isEmpty()) {
                     return files;
                 }
+            } catch (RepositoryResourceLimitExceededException eLimit) {
+                throw eLimit;
             } catch (Exception ex) {
                 log.warn("Unauthenticated zipball download failed for {}/{}: {}", owner, repoName, ex.getMessage());
             }
@@ -321,8 +333,55 @@ public class GitHubService {
             return Collections.emptyMap();
         }
 
+        long maxArchiveBytes = resourceLimits != null ? resourceLimits.getMaxArchiveSizeBytes() : 15_728_640L;
+        long maxFileBytes = resourceLimits != null ? resourceLimits.getMaxFileSizeBytes() : 1_048_576L;
+        long maxExtractedBytes = resourceLimits != null ? resourceLimits.getMaxExtractedSizeBytes() : 10_485_760L;
+        int maxFiles = resourceLimits != null ? resourceLimits.getMaxSourceFiles() : 150;
+
+        // 1. Content-Length check if available
+        long contentLength = response.headers().firstValueAsLong("Content-Length").orElse(-1L);
+        if (contentLength > maxArchiveBytes) {
+            throw new RepositoryResourceLimitExceededException(
+                    "MAX_ARCHIVE_SIZE", contentLength, maxArchiveBytes, "bytes",
+                    String.format("Repository archive size (%.1f MB) exceeds free-tier limit of %.1f MB",
+                            contentLength / (1024.0 * 1024.0), maxArchiveBytes / (1024.0 * 1024.0)));
+        }
+
+        // 2. Count compressed stream bytes
+        java.util.concurrent.atomic.AtomicLong totalCompressedRead = new java.util.concurrent.atomic.AtomicLong(0);
+        InputStream countingStream = new java.io.FilterInputStream(response.body()) {
+            @Override
+            public int read() throws java.io.IOException {
+                int b = super.read();
+                if (b != -1) {
+                    if (totalCompressedRead.incrementAndGet() > maxArchiveBytes) {
+                        throw new RepositoryResourceLimitExceededException(
+                                "MAX_ARCHIVE_SIZE", totalCompressedRead.get(), maxArchiveBytes, "bytes",
+                                String.format("Repository archive stream exceeded free-tier limit of %.1f MB",
+                                        maxArchiveBytes / (1024.0 * 1024.0)));
+                    }
+                }
+                return b;
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len) throws java.io.IOException {
+                int n = super.read(b, off, len);
+                if (n > 0) {
+                    if (totalCompressedRead.addAndGet(n) > maxArchiveBytes) {
+                        throw new RepositoryResourceLimitExceededException(
+                                "MAX_ARCHIVE_SIZE", totalCompressedRead.get(), maxArchiveBytes, "bytes",
+                                String.format("Repository archive stream exceeded free-tier limit of %.1f MB",
+                                        maxArchiveBytes / (1024.0 * 1024.0)));
+                    }
+                }
+                return n;
+            }
+        };
+
         Map<String, String> files = new HashMap<>();
-        try (ZipInputStream zis = new ZipInputStream(response.body())) {
+        long totalExtractedBytes = 0;
+        try (ZipInputStream zis = new ZipInputStream(countingStream)) {
             ZipEntry entry;
             byte[] buffer = new byte[8192];
             while ((entry = zis.getNextEntry()) != null) {
@@ -335,9 +394,31 @@ public class GitHubService {
                 if (slashIdx != -1) {
                     String relativePath = name.substring(slashIdx + 1);
                     if (isAnalyzableSourceFile(relativePath)) {
+                        if (files.size() >= maxFiles) {
+                            throw new RepositoryResourceLimitExceededException(
+                                    "MAX_SOURCE_FILES", files.size() + 1, maxFiles, "files",
+                                    String.format("Repository contains more than %d analyzable source files (free-tier limit: %d files).",
+                                            maxFiles, maxFiles));
+                        }
+
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         int read;
+                        long fileBytes = 0;
                         while ((read = zis.read(buffer)) != -1) {
+                            fileBytes += read;
+                            if (fileBytes > maxFileBytes) {
+                                throw new RepositoryResourceLimitExceededException(
+                                        "MAX_FILE_SIZE", fileBytes, maxFileBytes, "bytes",
+                                        String.format("File '%s' size (%.1f KB) exceeds single-file free-tier limit of %.1f KB.",
+                                                relativePath, fileBytes / 1024.0, maxFileBytes / 1024.0));
+                            }
+                            totalExtractedBytes += read;
+                            if (totalExtractedBytes > maxExtractedBytes) {
+                                throw new RepositoryResourceLimitExceededException(
+                                        "MAX_EXTRACTED_SIZE", totalExtractedBytes, maxExtractedBytes, "bytes",
+                                        String.format("Total extracted source size (%.1f MB) exceeds free-tier limit of %.1f MB.",
+                                                totalExtractedBytes / (1024.0 * 1024.0), maxExtractedBytes / (1024.0 * 1024.0)));
+                            }
                             baos.write(buffer, 0, read);
                         }
                         files.put(relativePath, baos.toString(StandardCharsets.UTF_8));
@@ -350,7 +431,7 @@ public class GitHubService {
         return files;
     }
 
-    private boolean isAnalyzableSourceFile(String path) {
+    public boolean isAnalyzableSourceFile(String path) {
         if (path == null) return false;
         String lower = path.toLowerCase();
         if (lower.contains("node_modules/") || lower.contains(".git/") || lower.contains("target/")
