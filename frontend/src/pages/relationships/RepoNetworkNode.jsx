@@ -1,0 +1,60 @@
+import React from 'react';
+import { Handle, Position } from '@xyflow/react';
+import { GitBranch, ShieldCheck, AlertCircle, Zap } from 'lucide-react';
+
+export const RepoNetworkNode = ({ data, selected }) => {
+  const name = data.label || data.repoName || 'Repository';
+  const ecosystem = data.group || data.ecosystem || 'MAVEN';
+  const healthScore = data.healthScore ?? 100;
+  const healthRating = data.healthRating || (healthScore >= 80 ? 'Healthy' : healthScore >= 50 ? 'Moderate' : 'Critical');
+  const depCount = data.dependencyCount ?? 0;
+  const isDimmed = data.isDimmed ?? false;
+  const isIsolated = data.isIsolated ?? false;
+  const sharedEdgeCount = data.sharedEdgeCount ?? 0;
+
+  return (
+    <div
+      className={`rf-node-base rf-node-repo ${selected ? 'selected' : ''} ${isDimmed ? 'dimmed' : ''}`}
+      style={{ minWidth: 200 }}
+    >
+      <Handle type="target" position={Position.Top} id="top" />
+      <Handle type="target" position={Position.Left} id="left" />
+      <Handle type="source" position={Position.Right} id="right" />
+      <Handle type="source" position={Position.Bottom} id="bottom" />
+
+      <div className="rf-node-header">
+        <div className="rf-node-title-group">
+          <div className="rf-node-icon">
+            <GitBranch size={14} />
+          </div>
+          <div className="rf-node-name" title={name}>
+            {name}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, gap: 6 }}>
+        <span className="rf-node-type-badge">{ecosystem}</span>
+        <span className={`meta-pill ${healthRating === 'Healthy' ? 'success' : 'warning'}`} style={{ fontSize: '10px' }}>
+          {healthRating === 'Healthy' ? <ShieldCheck size={10} /> : <AlertCircle size={10} />}
+          {healthScore}%
+        </span>
+      </div>
+
+      <div style={{ marginTop: 5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10.5px' }}>
+        <span className="rf-node-subtext" style={{ margin: 0 }}>
+          {depCount} deps
+        </span>
+        {isIsolated ? (
+          <span className="meta-pill" style={{ fontSize: '9.5px', padding: '1px 5px', color: 'var(--text-muted)' }}>
+            Isolated
+          </span>
+        ) : (
+          <span className="meta-pill brand" style={{ fontSize: '9.5px', padding: '1px 5px' }}>
+            <Zap size={9} /> {sharedEdgeCount} {sharedEdgeCount === 1 ? 'link' : 'links'}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};

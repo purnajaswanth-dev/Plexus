@@ -1,0 +1,919 @@
+/* ==========================================================================
+   Page-Specific Styles
+   Overview, Repositories, Dependency Explorer, Impact Analysis, Network, Settings
+   ========================================================================== */
+
+/* ==========================================================================
+   Page 1: Overview
+   ========================================================================== */
+.overview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+    .overview-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.overview-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-xs);
+}
+
+.card-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.card-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Health Distribution Visual Bar */
+.health-dist-bar {
+    display: flex;
+    height: 12px;
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    background-color: var(--bg-subtle);
+    margin: 16px 0 20px 0;
+}
+
+.health-dist-segment {
+    height: 100%;
+    transition: width var(--transition-normal);
+    cursor: pointer;
+    position: relative;
+}
+
+.health-dist-segment:hover {
+    opacity: 0.85;
+}
+
+.segment-healthy { background-color: var(--status-success-dot); }
+.segment-moderate { background-color: var(--status-warning-dot); }
+.segment-critical { background-color: var(--status-danger-dot); }
+
+.health-legend-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.health-legend-item {
+    background-color: var(--bg-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.health-legend-item:hover {
+    border-color: var(--border-hover);
+    background-color: var(--bg-hover);
+}
+
+.health-legend-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.health-legend-count {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Top Dependencies List */
+.top-deps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.top-dep-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    background-color: var(--bg-subtle);
+    border: 1px solid var(--border-subtle);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+}
+
+.top-dep-item:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--border-hover);
+}
+
+.top-dep-name {
+    font-weight: 600;
+    font-size: 13px;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+}
+
+.top-dep-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Recent Activity List */
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    background-color: var(--bg-subtle);
+}
+
+/* Attention Required Items */
+.attention-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--status-warning-border);
+    background-color: var(--status-warning-bg);
+    margin-bottom: 8px;
+}
+
+.attention-item.critical {
+    border-color: var(--status-danger-border);
+    background-color: var(--status-danger-bg);
+}
+
+.attention-details {
+    flex: 1;
+}
+
+.attention-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.attention-issue {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   Page 2: Repositories & Detail Drawer
+   ========================================================================== */
+.drawer-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    background-color: var(--bg-subtle);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    margin-bottom: 20px;
+}
+
+.drawer-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.drawer-meta-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.drawer-meta-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    word-break: break-all;
+}
+
+.dep-scope-section {
+    margin-bottom: 20px;
+}
+
+.dep-scope-header {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dep-item-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+    font-size: 12.5px;
+}
+
+.dep-item-name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.dep-item-version {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--text-muted);
+    background-color: var(--bg-subtle);
+    padding: 2px 6px;
+    border-radius: var(--radius-xs);
+}
+
+/* ==========================================================================
+   Page 3: Dependency Explorer
+   ========================================================================== */
+.version-tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.version-tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: var(--radius-xs);
+    background-color: var(--bg-subtle);
+    border: 1px solid var(--border-base);
+    color: var(--text-secondary);
+}
+
+.version-tag.divergent {
+    border-color: var(--status-warning-border);
+    background-color: var(--status-warning-bg);
+    color: var(--status-warning-text);
+}
+
+/* ==========================================================================
+   Page 4: Impact Analysis
+   ========================================================================== */
+.impact-config-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-xs);
+    margin-bottom: 24px;
+}
+
+.impact-form-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+@media (max-width: 900px) {
+    .impact-form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .impact-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.impact-disclaimer {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background-color: var(--brand-surface);
+    border: 1px solid var(--brand-border);
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+    font-size: 12.5px;
+    color: var(--brand-text);
+    line-height: 1.4;
+}
+
+.impact-summary-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+    .impact-summary-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.risk-card {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-base);
+    padding: 18px;
+    background-color: var(--bg-surface);
+}
+
+.risk-card.breaking {
+    border-color: var(--status-danger-border);
+    background-color: var(--status-danger-bg);
+}
+
+.risk-card.warning {
+    border-color: var(--status-warning-border);
+    background-color: var(--status-warning-bg);
+}
+
+.risk-card.safe {
+    border-color: var(--status-success-border);
+    background-color: var(--status-success-bg);
+}
+
+.risk-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.risk-card.breaking .risk-title { color: var(--status-danger-text); }
+.risk-card.warning .risk-title { color: var(--status-warning-text); }
+.risk-card.safe .risk-title { color: var(--status-success-text); }
+
+.risk-count {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+    font-variant-numeric: tabular-nums;
+}
+
+.risk-percentage {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Page 5: Dependency Network (D3 Canvas)
+   ========================================================================== */
+.network-container {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-xs);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.network-toolbar {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    background-color: var(--bg-subtle);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.network-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.graph-canvas-wrap {
+    height: 600px;
+    width: 100%;
+    position: relative;
+    background-color: var(--bg-surface);
+    cursor: grab;
+}
+
+.graph-canvas-wrap:active {
+    cursor: grabbing;
+}
+
+.network-legend {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 11.5px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.network-tooltip {
+    position: absolute;
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    font-size: 12px;
+    box-shadow: var(--shadow-lg);
+    pointer-events: none;
+    z-index: 50;
+    display: none;
+    max-width: 280px;
+    line-height: 1.4;
+}
+
+/* D3 Graph elements styling */
+.d3-node {
+    cursor: pointer;
+    transition: stroke-width 0.2s, stroke 0.2s;
+}
+
+.d3-node:hover {
+    stroke: var(--text-primary);
+    stroke-width: 2.5px;
+}
+
+.d3-node-label {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    fill: var(--text-primary);
+    pointer-events: none;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.d3-link {
+    stroke: var(--border-hover);
+    stroke-opacity: 0.55;
+    transition: stroke-opacity 0.2s, stroke 0.2s;
+}
+
+.d3-link:hover {
+    stroke: var(--brand-500);
+    stroke-opacity: 0.9;
+}
+
+/* ==========================================================================
+   Page 6: Settings
+   ========================================================================== */
+.settings-section {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-xs);
+    margin-bottom: 24px;
+}
+
+.settings-section-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+}
+
+.settings-section-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0 0 20px 0;
+}
+
+.settings-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.settings-info-box {
+    background-color: var(--bg-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 14px;
+}
+
+.settings-info-label {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.settings-info-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+}
+
+/* ==========================================================================
+   Feature 1: Repository Architecture Intelligence Styles
+   ========================================================================== */
+.arch-graph-container {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.arch-toolbar {
+    padding: 10px 16px;
+    background-color: var(--bg-subtle);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.arch-level-tabs {
+    display: flex;
+    align-items: center;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-md);
+    padding: 2px;
+}
+
+.arch-level-btn {
+    border: none;
+    background: transparent;
+    padding: 4px 10px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-xs);
+    transition: all var(--transition-fast);
+}
+
+.arch-level-btn:hover {
+    color: var(--text-primary);
+}
+
+.arch-level-btn.active {
+    background-color: var(--brand-500);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.arch-canvas-wrap {
+    height: 520px;
+    width: 100%;
+    position: relative;
+    background-color: var(--bg-surface);
+    overflow: hidden;
+}
+
+.arch-inspector-drawer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 320px;
+    background-color: var(--bg-surface);
+    border-left: 1px solid var(--border-base);
+    box-shadow: -4px 0 16px rgba(0,0,0,0.08);
+    display: none;
+    flex-direction: column;
+    z-index: 20;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.arch-inspector-drawer.open {
+    display: flex;
+}
+
+/* Architecture Node Types Styling */
+.node-controller { fill: #ec4899; } /* Pink */
+.node-service { fill: #8b5cf6; }    /* Purple */
+.node-repository { fill: #3b82f6; } /* Blue */
+.node-entity { fill: #10b981; }     /* Emerald */
+.node-interface { fill: #06b6d4; }  /* Cyan */
+.node-class { fill: #64748b; }      /* Slate */
+.node-endpoint { fill: #f59e0b; }   /* Amber */
+.node-package { fill: #6366f1; }    /* Indigo */
+.node-module { fill: #14b8a6; }     /* Teal */
+.node-table { fill: #059669; }      /* Dark Green */
+
+/* Architecture Edge Types */
+.edge-contains { stroke: #94a3b8; stroke-dasharray: 2,2; }
+.edge-exposes { stroke: #f59e0b; stroke-width: 2px; }
+.edge-implements { stroke: #06b6d4; stroke-width: 1.5px; }
+.edge-extends { stroke: #8b5cf6; stroke-width: 1.5px; }
+.edge-persists { stroke: #10b981; stroke-width: 2px; }
+.edge-imports { stroke: #cbd5e1; stroke-width: 1px; }
+
+/* ==========================================================================
+   Feature 2: Bipartite Network Graph Styles
+   ========================================================================== */
+.view-switch-group {
+    display: flex;
+    align-items: center;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-md);
+    padding: 2px;
+}
+
+.view-switch-btn {
+    border: none;
+    background: transparent;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-xs);
+    transition: all var(--transition-fast);
+}
+
+.view-switch-btn.active {
+    background-color: var(--text-primary);
+    color: var(--text-inverse);
+    font-weight: 600;
+}
+
+[data-theme="dark"] .view-switch-btn.active {
+    background-color: var(--brand-500);
+}
+
+.bipartite-repo-node {
+    rx: 6;
+    ry: 6;
+    fill: #4f46e5;
+    stroke: #ffffff;
+    stroke-width: 2px;
+}
+
+.bipartite-dep-maven {
+    fill: #2563eb;
+    stroke: #ffffff;
+    stroke-width: 1.5px;
+}
+
+.bipartite-dep-npm {
+    fill: #16a34a;
+    stroke: #ffffff;
+    stroke-width: 1.5px;
+}
+
+.node-divergent-glow {
+    stroke: #f59e0b !important;
+    stroke-width: 3.5px !important;
+    filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.6));
+}
+
+/* ==========================================================================
+   Feature 3: Impact Assessment & Evidence Findings
+   ========================================================================== */
+.finding-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-base);
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-xs);
+}
+
+.finding-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.finding-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.evidence-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: var(--radius-xs);
+    text-transform: uppercase;
+}
+
+.evidence-level-1 {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.evidence-level-2 {
+    background-color: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.evidence-level-3 {
+    background-color: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+}
+
+/* Strategic Recommendation Banner */
+.recommendation-banner {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 18px 22px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-base);
+    background-color: var(--bg-surface);
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-xs);
+}
+
+.recommendation-banner.banner-proceed {
+    background-color: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+[data-theme="dark"] .recommendation-banner.banner-proceed {
+    background-color: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.recommendation-banner.banner-caution {
+    background-color: #fffbeb;
+    border-color: #fde68a;
+}
+
+[data-theme="dark"] .recommendation-banner.banner-caution {
+    background-color: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.recommendation-banner.banner-investigate {
+    background-color: #fef2f2;
+    border-color: #fecaca;
+}
+
+[data-theme="dark"] .recommendation-banner.banner-investigate {
+    background-color: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.recommendation-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.banner-proceed .recommendation-title { color: #15803d; }
+.banner-caution .recommendation-title { color: #b45309; }
+.banner-investigate .recommendation-title { color: #b91c1c; }
+
+.recommendation-reason {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
+
+.recommendation-exec {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Network Inspector Drawer */
+.network-inspector-drawer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 340px;
+    background-color: var(--bg-surface);
+    border-left: 1px solid var(--border-base);
+    box-shadow: -4px 0 16px rgba(0,0,0,0.08);
+    display: none;
+    flex-direction: column;
+    z-index: 25;
+    padding: 18px;
+    overflow-y: auto;
+}
+
+.network-inspector-drawer.open {
+    display: flex;
+}
+
+.network-inspector-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-base);
+    margin-bottom: 14px;
+}
+
+.network-inspector-close {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px;
+    border-radius: var(--radius-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.network-inspector-close:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-hover);
+}
+
+
