@@ -9,8 +9,10 @@ export const RepositoryNode = ({ data, selected }) => {
   const healthScore = data.healthScore ?? 100;
   const healthRating = data.healthRating || (healthScore >= 80 ? 'Healthy' : healthScore >= 50 ? 'Moderate' : 'Critical');
 
+  const isDimmed = data.isDimmed;
+
   return (
-    <div className={`rf-node-base rf-node-repo ${selected ? 'selected' : ''}`} style={{ minWidth: 200 }}>
+    <div className={`rf-node-base rf-node-repo ${selected ? 'selected' : ''} ${isDimmed ? 'dimmed' : ''}`} style={{ minWidth: 200 }}>
       <Handle type="target" position={Position.Top} id="top" />
       <Handle type="target" position={Position.Left} id="left" />
       <Handle type="source" position={Position.Right} id="right" />

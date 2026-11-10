@@ -83,6 +83,9 @@ const NetworkPage = {
                         <button class="btn btn-secondary btn-icon btn-sm" id="graph-zoom-reset" title="Reset View">
                             ${Icons.zoomReset(14)}
                         </button>
+                        <button class="btn btn-secondary btn-icon btn-sm" id="graph-fullscreen" title="Toggle Fullscreen">
+                            ${Icons.maximize(14)}
+                        </button>
                     </div>
                 </div>
 
@@ -179,6 +182,29 @@ const NetworkPage = {
         const zoomFitBtn = document.getElementById('graph-zoom-fit');
         if (zoomFitBtn) {
             zoomFitBtn.onclick = () => this.fitToScreen();
+        }
+
+        const fsBtn = document.getElementById('graph-fullscreen');
+        if (fsBtn) {
+            fsBtn.onclick = () => {
+                const wrap = document.querySelector('.network-container') || document.getElementById('graph-canvas-container');
+                if (!document.fullscreenElement) {
+                    if (wrap && wrap.requestFullscreen) {
+                        wrap.requestFullscreen().catch(() => {});
+                    }
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen().catch(() => {});
+                    }
+                }
+            };
+            document.addEventListener('fullscreenchange', () => {
+                if (fsBtn) {
+                    fsBtn.innerHTML = document.fullscreenElement ? Icons.minimize(14) : Icons.maximize(14);
+                    fsBtn.title = document.fullscreenElement ? 'Exit Fullscreen' : 'Toggle Fullscreen';
+                }
+                setTimeout(() => this.renderActiveGraph(), 100);
+            });
         }
 
         const searchInput = document.getElementById('graph-search-input');
@@ -485,6 +511,33 @@ const NetworkPage = {
                 } else {
                     this.openRepositoryInspector(d, edges);
                 }
+            })
+            .on('mouseenter', (event, d) => {
+                const connectedIds = new Set([d.id]);
+                link.each(function(l) {
+                    const s = typeof l.source === 'object' ? l.source.id : l.source;
+                    const t = typeof l.target === 'object' ? l.target.id : l.target;
+                    if (s === d.id) connectedIds.add(t);
+                    if (t === d.id) connectedIds.add(s);
+                });
+                node.style('opacity', n => connectedIds.has(n.id) ? 1 : 0.12);
+                node.selectAll('text').style('display', function(n) {
+                    if (connectedIds.has(n.id)) return 'inline';
+                    return (n.nodeCategory === 'REPOSITORY' || n.isDivergent || (n.repoCount && n.repoCount > 1)) ? 'inline' : 'none';
+                });
+                link.style('stroke-opacity', l => {
+                    const s = typeof l.source === 'object' ? l.source.id : l.source;
+                    const t = typeof l.target === 'object' ? l.target.id : l.target;
+                    return (s === d.id || t === d.id) ? 0.9 : 0.04;
+                });
+            })
+            .on('mouseleave', () => {
+                this.hideTooltip();
+                node.style('opacity', 1);
+                node.selectAll('text').style('display', function(n) {
+                    return (n.nodeCategory === 'REPOSITORY' || n.isDivergent || (n.repoCount && n.repoCount > 1)) ? 'inline' : 'none';
+                });
+                link.style('stroke-opacity', 0.45);
             });
 
         // Repositories rendered as rounded rectangles
@@ -506,8 +559,7 @@ const NetworkPage = {
                     </div>
                     <div style="margin-top: 6px; font-size: 11px; color: var(--brand-500);">Click to inspect repository</div>
                 `);
-            })
-            .on('mouseout', () => this.hideTooltip());
+            });
 
         node.filter(d => d.nodeCategory === 'REPOSITORY')
             .append('text')
@@ -541,14 +593,14 @@ const NetworkPage = {
                     </div>
                     <div style="margin-top: 6px; font-size: 11px; color: var(--brand-500);">Click to inspect usage or analyze impact</div>
                 `);
-            })
-            .on('mouseout', () => this.hideTooltip());
+            });
 
         node.filter(d => d.nodeCategory === 'DEPENDENCY')
             .append('text')
             .attr('class', 'd3-node-label')
             .attr('dx', d => 12 + Math.min(10, (d.repoCount || 1) * 2))
             .attr('dy', 4)
+            .style('display', d => (d.isDivergent || (d.repoCount && d.repoCount > 1)) ? 'inline' : 'none')
             .text(d => {
                 const name = d.artifactId || d.label || '';
                 return name.length > 20 ? name.substring(0, 19) + '…' : name;

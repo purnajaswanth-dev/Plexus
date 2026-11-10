@@ -71,9 +71,10 @@ export const ArchitectureNode = ({ data, selected }) => {
   const subtext = data.packageOrModule || data.filePath || '';
   const childCount = data.childCount || 0;
   const isExpanded = data.isExpanded ?? true;
+  const isDimmed = data.isDimmed;
 
   return (
-    <div className={`rf-node-base ${getNodeClass(nodeType)} ${selected ? 'selected' : ''}`}>
+    <div className={`rf-node-base ${getNodeClass(nodeType)} ${selected ? 'selected' : ''} ${isDimmed ? 'dimmed' : ''}`}>
       {/* React Flow Handles for all 4 layout directions */}
       <Handle type="target" position={Position.Top} id="top" style={{ background: '#81776F' }} />
       <Handle type="target" position={Position.Left} id="left" style={{ background: '#81776F' }} />

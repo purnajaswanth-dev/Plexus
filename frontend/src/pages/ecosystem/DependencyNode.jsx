@@ -9,8 +9,10 @@ export const DependencyNode = ({ data, selected }) => {
   const versions = data.versions || [];
   const isDivergent = data.isDivergent || versions.length > 1;
 
+  const isDimmed = data.isDimmed;
+
   return (
-    <div className={`rf-node-base rf-node-dep ${isDivergent ? 'divergent' : ''} ${selected ? 'selected' : ''}`} style={{ minWidth: 190 }}>
+    <div className={`rf-node-base rf-node-dep ${isDivergent ? 'divergent' : ''} ${selected ? 'selected' : ''} ${isDimmed ? 'dimmed' : ''}`} style={{ minWidth: 190 }}>
       <Handle type="target" position={Position.Top} id="top" />
       <Handle type="target" position={Position.Left} id="left" />
       <Handle type="source" position={Position.Right} id="right" />

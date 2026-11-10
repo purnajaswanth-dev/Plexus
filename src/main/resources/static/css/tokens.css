@@ -1,180 +1,210 @@
 /* ==========================================================================
-   OFFICIAL WARM NEUTRAL DESIGN SYSTEM TOKENS — CODECITY
-   Brand Foundation: Warm Porcelain (#F9F8F6), Soft Sand (#EFE9E3),
-                     Stone Taupe (#D9CFC7), Warm Sandstone (#C9B59C)
-   Text Palette:     Primary (#39332E), Secondary (#62574E), Muted (#81776F)
-   Visualization:    Muted Teal (#587C78), Slate Blue (#71869B),
-                     Terracotta (#B77C61), Olive (#8D916B),
-                     Dusty Mauve (#927D91), Muted Ochre (#C09A62)
-   Semantic Status:  Success (#64836B), Warning (#B58A4A), Error (#B7655D),
-                     Information (#647F98), Unresolved (#8B8178)
+   PLEXUS / CODECITY — PROFESSIONAL DESIGN SYSTEM TOKENS
+   Inspired by Developer-Tool Aesthetics (Geist & Geist Mono Typography)
+   Default: Sleek Engineering Dark Theme
+   Light: Crisp Clean Slate Light Theme
    ========================================================================== */
 
 :root {
     /* ----------------------------------------------------------------------
-       1. The Four Permanent Brand Foundation Colors (Part 2)
+       1. Core Base Design Tokens (Dark Theme Baseline)
        ---------------------------------------------------------------------- */
-    --brand-warm-porcelain: #F9F8F6; /* Main application background */
-    --brand-soft-sand:      #EFE9E3; /* Secondary panels and surfaces */
-    --brand-stone-taupe:    #D9CFC7; /* Borders and dividers */
-    --brand-warm-sandstone: #C9B59C; /* Primary visual accent */
+    --bg:     #09090c;
+    --p:      #0f0f13;
+    --p2:     #15151b;
+    --p3:     #1b1b23;
+    --b:      #23232c;
+    --b2:     #30303c;
+    --t:      #ececf2;
+    --m:      #8b8b9a;
+    --m2:     #5d5d6b;
+    --a:      #6d8cff;
+    --ok:     #34d399;
+    --wa:     #f5b942;
+    --er:     #f26d6d;
+    --cy:     #38bdf8;
+    
+    /* City & Canvas Visual Tokens */
+    --cbg:    #09090c;
+    --croad:  #14141b;
+    --cmark:  #262631;
+    --cdist:  #0e0e13;
+    --cdl:    #272731;
+    --sig:    #ffffff;
+    --onc:    #04141c;
+    --pt:     #071022;
+
+    /* Typography */
+    --font-sans: 'Geist', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --f: var(--font-sans);
+    --mo: var(--font-mono);
 
     /* ----------------------------------------------------------------------
-       2. Typography (Readable Dark Warm Charcoal — Part 2)
+       2. Semantic Mappings for Shared Shell & Subsystems
        ---------------------------------------------------------------------- */
-    --text-primary:         #39332E; /* Primary text */
-    --text-secondary:       #62574E; /* Secondary text */
-    --text-muted:           #81776F; /* Muted text */
-    --text-subtle:          #9E938A; /* Tertiary metadata */
-    --text-inverse:         #FFFFFF;
-    --text-accent:          #7A5C38; /* Accessible Warm Sandstone text */
-    --text-on-accent:       #39332E;
+    --bg-base:              var(--bg);
+    --bg-canvas:            var(--cbg);
+    --bg-workspace:         var(--bg);
+    --bg-surface:           var(--p);
+    --bg-surface-secondary: var(--p2);
+    --bg-surface-tertiary:  var(--p3);
+    --bg-subtle:            var(--p2);
+    --bg-muted:             var(--p3);
+    --bg-hover:             var(--p2);
+    --bg-active:            var(--p3);
+    --bg-elevated:          var(--p);
 
-    /* ----------------------------------------------------------------------
-       3. Primary Backgrounds & Surfaces (Part 2)
-       ---------------------------------------------------------------------- */
-    --bg-base:              #F9F8F6; /* Warm Porcelain */
-    --bg-canvas:            #F9F8F6; /* City canvas */
-    --bg-workspace:         #F9F8F6;
-    --bg-surface:           #FFFFFF; /* Elevated clean card surface */
-    --bg-surface-secondary: #EFE9E3; /* Soft Sand */
-    --bg-surface-tertiary:  #E6DFD7; /* Sub-blocks */
-    --bg-subtle:            #F4EFEA; /* Soft panel tint */
-    --bg-muted:             #E8E0D7; /* Table header/inactive tabs */
-    --bg-hover:             #EFE9E3; /* Soft hover tint */
-    --bg-active:            #D9CFC7; /* Active/selected surface */
-    --bg-elevated:          #FFFFFF; /* Modals / popovers */
+    --border-subtle:        var(--b);
+    --border-base:          var(--b);
+    --border-hover:         var(--b2);
+    --border-focus:         var(--a);
+    --border-color:         var(--b);
+    --surface-card:         var(--p);
+    --surface-bg:           var(--bg);
 
-    /* ----------------------------------------------------------------------
-       4. Borders & Dividers (Part 2)
-       ---------------------------------------------------------------------- */
-    --border-subtle:        #EFE9E3;
-    --border-base:          #D9CFC7; /* Stone Taupe */
-    --border-hover:         #C9B59C; /* Warm Sandstone */
-    --border-focus:         #C9B59C;
+    --text-primary:         var(--t);
+    --text-secondary:       var(--m);
+    --text-muted:           var(--m2);
+    --text-subtle:          var(--m2);
+    --text-inverse:         var(--bg);
+    --text-accent:          var(--a);
+    --text-on-accent:       var(--onc);
 
-    /* ----------------------------------------------------------------------
-       5. Brand Accents
-       ---------------------------------------------------------------------- */
-    --brand-50:             #F9F8F6;
-    --brand-100:            #EFE9E3;
-    --brand-500:            #C9B59C; /* Warm Sandstone */
-    --brand-600:            #B8A085;
-    --brand-700:            #9C846B;
-    --brand-surface:        #EFE9E3;
-    --brand-border:         #D9CFC7;
-    --brand-text:           #39332E;
+    --brand-50:             var(--p2);
+    --brand-100:            var(--p3);
+    --brand-500:            var(--a);
+    --brand-600:            var(--a);
+    --brand-700:            var(--a);
+    --brand-surface:        var(--p2);
+    --brand-border:         var(--b);
+    --brand-text:           var(--t);
 
-    /* ----------------------------------------------------------------------
-       6. Semantic Status Colors (Part 7)
-       ---------------------------------------------------------------------- */
-    --status-success:        #64836B;
-    --status-success-bg:     rgba(100, 131, 107, 0.12);
-    --status-success-border: #64836B;
-    --status-success-text:   #64836B;
-    --status-success-dot:    #64836B;
+    /* Status Colors */
+    --status-success:        var(--ok);
+    --status-success-bg:     color-mix(in srgb, var(--ok) 12%, transparent);
+    --status-success-border: color-mix(in srgb, var(--ok) 28%, transparent);
+    --status-success-text:   var(--ok);
+    --status-success-dot:    var(--ok);
 
-    --status-warning:        #B58A4A;
-    --status-warning-bg:     rgba(181, 138, 74, 0.12);
-    --status-warning-border: #B58A4A;
-    --status-warning-text:   #B58A4A;
-    --status-warning-dot:    #B58A4A;
+    --status-warning:        var(--wa);
+    --status-warning-bg:     color-mix(in srgb, var(--wa) 12%, transparent);
+    --status-warning-border: color-mix(in srgb, var(--wa) 28%, transparent);
+    --status-warning-text:   var(--wa);
+    --status-warning-dot:    var(--wa);
 
-    --status-danger:         #B7655D;
-    --status-danger-bg:      rgba(183, 101, 93, 0.12);
-    --status-danger-border:  #B7655D;
-    --status-danger-text:    #B7655D;
-    --status-danger-dot:     #B7655D;
+    --status-danger:         var(--er);
+    --status-danger-bg:      color-mix(in srgb, var(--er) 12%, transparent);
+    --status-danger-border:  color-mix(in srgb, var(--er) 28%, transparent);
+    --status-danger-text:    var(--er);
+    --status-danger-dot:     var(--er);
 
-    --status-info:           #647F98;
-    --status-info-bg:        rgba(100, 127, 152, 0.12);
-    --status-info-border:    #647F98;
-    --status-info-text:      #647F98;
-    --status-info-dot:       #647F98;
+    --status-info:           var(--cy);
+    --status-info-bg:        color-mix(in srgb, var(--cy) 12%, transparent);
+    --status-info-border:    color-mix(in srgb, var(--cy) 28%, transparent);
+    --status-info-text:      var(--cy);
+    --status-info-dot:       var(--cy);
 
-    --status-neutral:        #8B8178;
-    --status-neutral-bg:     rgba(139, 129, 120, 0.12);
-    --status-neutral-border: #8B8178;
-    --status-neutral-text:   #8B8178;
-    --status-neutral-dot:    #8B8178;
+    --status-neutral:        var(--m);
+    --status-neutral-bg:     color-mix(in srgb, var(--m) 12%, transparent);
+    --status-neutral-border: var(--b2);
+    --status-neutral-text:   var(--m);
+    --status-neutral-dot:    var(--m);
 
-    /* ----------------------------------------------------------------------
-       7. Separate CodeCity Visualization Palette (Part 3)
-       ---------------------------------------------------------------------- */
-    --viz-primary:          #587C78; /* Muted Teal: Primary architectural relationships */
-    --viz-secondary:        #71869B; /* Slate Blue: Secondary dependency relationships */
-    --viz-external:         #B77C61; /* Terracotta: External service interactions */
-    --viz-persistence:      #8D916B; /* Olive: Data and persistence relationships */
-    --viz-async:            #927D91; /* Dusty Mauve: Asynchronous relationships */
-    --viz-selected:         #C09A62; /* Muted Ochre: Selected elements & journey emphasis */
+    /* Graph & Visual Explorer Palette */
+    --viz-primary:          var(--a);
+    --viz-secondary:        var(--cy);
+    --viz-external:         #e879a6;
+    --viz-persistence:      var(--ok);
+    --viz-async:            #8b7cf6;
+    --viz-selected:         var(--wa);
 
-    /* Ecosystem Colors (Mapped to Visualization Palette) */
-    --eco-maven-bg:         rgba(113, 134, 155, 0.12);
-    --eco-maven-border:     #71869B;
-    --eco-maven-text:       #39332E;
-    --eco-maven-node:       #71869B;
+    /* Ecosystem Badges */
+    --eco-maven-bg:         color-mix(in srgb, #6d8cff 12%, transparent);
+    --eco-maven-border:     #6d8cff;
+    --eco-maven-text:       #a3b8ff;
+    --eco-maven-node:       #6d8cff;
 
-    --eco-npm-bg:           rgba(88, 124, 120, 0.12);
-    --eco-npm-border:       #587C78;
-    --eco-npm-text:         #39332E;
-    --eco-npm-node:         #587C78;
+    --eco-npm-bg:           color-mix(in srgb, #34d399 12%, transparent);
+    --eco-npm-border:       #34d399;
+    --eco-npm-text:         #86efac;
+    --eco-npm-node:         #34d399;
 
-    --eco-none-bg:          rgba(139, 129, 120, 0.12);
-    --eco-none-border:      #8B8178;
-    --eco-none-text:        #62574E;
-    --eco-none-node:        #8B8178;
+    --eco-pypi-bg:          color-mix(in srgb, #f5b942 12%, transparent);
+    --eco-pypi-border:      #f5b942;
+    --eco-pypi-text:        #fde047;
+    --eco-pypi-node:        #f5b942;
 
-    /* Shadows (Soft warm natural shadows) */
-    --shadow-xs:            0 1px 2px 0 rgba(57, 51, 46, 0.04);
-    --shadow-sm:            0 1px 3px 0 rgba(57, 51, 46, 0.08), 0 1px 2px -1px rgba(57, 51, 46, 0.06);
-    --shadow-md:            0 4px 6px -1px rgba(57, 51, 46, 0.08), 0 2px 4px -2px rgba(57, 51, 46, 0.06);
-    --shadow-lg:            0 10px 15px -3px rgba(57, 51, 46, 0.08), 0 4px 6px -4px rgba(57, 51, 46, 0.06);
-    --shadow-drawer:        -4px 0 24px rgba(57, 51, 46, 0.12);
+    --eco-go-bg:            color-mix(in srgb, #38bdf8 12%, transparent);
+    --eco-go-border:        #38bdf8;
+    --eco-go-text:          #7dd3fc;
+    --eco-go-node:          #38bdf8;
+
+    --eco-none-bg:          color-mix(in srgb, var(--m) 12%, transparent);
+    --eco-none-border:      var(--b2);
+    --eco-none-text:        var(--m);
+    --eco-none-node:        var(--m2);
+
+    /* Shadows */
+    --shadow-xs:            0 1px 2px 0 rgba(0, 0, 0, 0.35);
+    --shadow-sm:            0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+    --shadow-md:            0 4px 6px -1px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(0, 0, 0, 0.35);
+    --shadow-lg:            0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.35);
+    --shadow-drawer:        -8px 0 32px rgba(0, 0, 0, 0.6);
 
     /* Radii */
     --radius-xs:            4px;
     --radius-sm:            6px;
     --radius-md:            8px;
-    --radius-lg:            12px;
-    --radius-xl:            16px;
+    --radius-lg:            10px;
+    --radius-xl:            14px;
     --radius-full:          9999px;
 
-    /* Layout Dimensions */
-    --sidebar-width:        260px;
-    --sidebar-collapsed-width: 68px;
-    --topbar-height:        56px;
+    /* Dimensions */
+    --sidebar-width:        240px;
+    --sidebar-collapsed-width: 64px;
+    --topbar-height:        54px;
 
-    /* Font stack */
-    --font-sans:            -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    --font-mono:            ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-
-    --transition-fast:      150ms ease;
-    --transition-normal:    250ms ease;
+    --transition-fast:      120ms ease;
+    --transition-normal:    200ms ease;
 }
 
-/* Dark theme mapped with consistent contrast */
-[data-theme="dark"] {
-    --bg-base:              #1A1715;
-    --bg-canvas:            #1A1715;
-    --bg-surface:           #24201D;
-    --bg-surface-secondary: #2C2825;
-    --bg-subtle:            #2C2825;
-    --bg-muted:             #37322E;
-    --bg-hover:             #37322E;
-    --bg-active:            #443E39;
+/* --------------------------------------------------------------------------
+   Light Theme Override ([data-theme="light"] and [data-t="l"])
+   -------------------------------------------------------------------------- */
+[data-theme="light"], [data-t="l"] {
+    --bg:     #f4f5f8;
+    --p:      #ffffff;
+    --p2:     #f4f5f8;
+    --p3:     #eaedf3;
+    --b:      #e3e6ed;
+    --b2:     #cdd2dd;
+    --t:      #12141a;
+    --m:      #586073;
+    --m2:     #8a91a1;
+    --a:      #3552d6;
+    --ok:     #0b8f60;
+    --wa:     #a86a00;
+    --er:     #cc3d3d;
+    --cy:     #0278b8;
 
-    --border-subtle:        #2C2825;
-    --border-base:          #443E39;
-    --border-hover:         #C9B59C;
-    --border-focus:         #C9B59C;
+    --cbg:    #eceef3;
+    --croad:  #ffffff;
+    --cmark:  #d3d8e2;
+    --cdist:  #fafbfc;
+    --cdl:    #d0d5df;
+    --sig:    #0f172a;
+    --onc:    #ffffff;
+    --pt:     #ffffff;
 
-    --text-primary:         #F9F8F6;
-    --text-secondary:       #D9CFC7;
-    --text-muted:           #A3978C;
-    --text-subtle:          #81776F;
-    --text-inverse:         #1A1715;
+    --shadow-xs:            0 1px 2px 0 rgba(18, 20, 26, 0.04);
+    --shadow-sm:            0 1px 3px 0 rgba(18, 20, 26, 0.06), 0 1px 2px -1px rgba(18, 20, 26, 0.04);
+    --shadow-md:            0 4px 6px -1px rgba(18, 20, 26, 0.06), 0 2px 4px -2px rgba(18, 20, 26, 0.04);
+    --shadow-lg:            0 10px 15px -3px rgba(18, 20, 26, 0.08), 0 4px 6px -4px rgba(18, 20, 26, 0.04);
+    --shadow-drawer:        -6px 0 28px rgba(18, 20, 26, 0.14);
 
-    --brand-surface:        #2C2825;
-    --brand-border:         #443E39;
-    --brand-text:           #F9F8F6;
+    --eco-maven-text:       #273ab5;
+    --eco-npm-text:         #076b47;
+    --eco-pypi-text:        #855200;
+    --eco-go-text:          #026094;
 }

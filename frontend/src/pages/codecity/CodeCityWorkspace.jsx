@@ -30,6 +30,7 @@ import {
   Route,
   Search,
   Maximize2,
+  Minimize2,
   ChevronLeft,
   ChevronDown,
   Layers,
@@ -113,6 +114,25 @@ const CodeCityWorkspaceInner = ({
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   const { fitView, setCenter } = useReactFlow();
+
+  const workspaceContainerRef = useRef(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      workspaceContainerRef.current?.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  };
 
   const currentRepoData = useMemo(() => {
     return repositories.find(r => r.id === selectedRepoId) || null;
@@ -576,34 +596,37 @@ const CodeCityWorkspaceInner = ({
 
   return (
     <div
+      ref={workspaceContainerRef}
       className="codecity-workspace-root"
       style={{
         width: '100vw',
         height: '100vh',
         boxSizing: 'border-box',
-        background: '#F9F8F6',
-        color: '#39332E',
+        background: 'var(--cc-bg, #09090c)',
+        color: 'var(--cc-text, #ececf2)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        fontFamily: "'Inter', system-ui, sans-serif"
+        fontFamily: "var(--f, 'Geist', system-ui, sans-serif)"
       }}
     >
       {/* =========================================================================
           TOP BAR (Exact Mockup Layout: CodeCity, Repo, Endpoint ▾, Level Pills)
           ========================================================================= */}
       <header
+        className="codecity-topbar"
         style={{
           height: '56px',
           boxSizing: 'border-box',
           display: 'flex',
           alignItems: 'center',
-          gap: '20px',
-          padding: '0 24px',
-          borderBottom: '1px solid #D9CFC7',
-          background: '#EFE9E3',
+          gap: '14px',
+          padding: '0 20px',
+          borderBottom: '1px solid var(--cc-border, #23232c)',
+          background: 'var(--cc-surface-2, #15151b)',
           zIndex: 60,
-          position: 'relative'
+          position: 'relative',
+          color: 'var(--cc-text, #ececf2)'
         }}
       >
         {/* Back Button */}
@@ -613,11 +636,11 @@ const CodeCityWorkspaceInner = ({
             display: 'flex',
             alignItems: 'center',
             gap: '4px',
-            background: '#FFFFFF',
-            border: '1px solid #D9CFC7',
-            color: '#39332E',
+            background: 'var(--cc-surface, #0f0f13)',
+            border: '1px solid var(--cc-border, #23232c)',
+            color: 'var(--cc-text, #ececf2)',
             borderRadius: '6px',
-            padding: '4px 8px',
+            padding: '5px 10px',
             fontSize: '12px',
             cursor: 'pointer'
           }}
@@ -628,7 +651,7 @@ const CodeCityWorkspaceInner = ({
         </button>
 
         {/* Brand Title */}
-        <div style={{ fontWeight: 700, fontSize: '17px', letterSpacing: '-.01em', color: '#39332E' }}>
+        <div style={{ fontWeight: 700, fontSize: '16px', letterSpacing: '-.01em', color: 'var(--cc-text, #ececf2)' }}>
           CodeCity
         </div>
 
@@ -638,19 +661,19 @@ const CodeCityWorkspaceInner = ({
             value={selectedRepoId || ''}
             onChange={(e) => setSelectedRepoId(Number(e.target.value))}
             style={{
-              background: '#FFFFFF',
-              border: '1px solid #D9CFC7',
+              background: 'var(--cc-surface, #0f0f13)',
+              border: '1px solid var(--cc-border, #23232c)',
               borderRadius: '6px',
               padding: '6px 10px',
-              color: '#39332E',
-              fontSize: '13px',
+              color: 'var(--cc-text, #ececf2)',
+              fontSize: '12.5px',
               fontWeight: 600,
               cursor: 'pointer',
               outline: 'none'
             }}
           >
             {repositories.map(r => (
-              <option key={r.id} value={r.id} style={{ background: '#FFFFFF', color: '#39332E' }}>
+              <option key={r.id} value={r.id} style={{ background: 'var(--cc-surface, #0f0f13)', color: 'var(--cc-text, #ececf2)' }}>
                 {r.repoName}
               </option>
             ))}
@@ -662,10 +685,10 @@ const CodeCityWorkspaceInner = ({
               fontSize: '11px',
               padding: '3px 8px',
               borderRadius: '5px',
-              background: '#EFE9E3',
-              color: '#587C78',
-              fontFamily: 'monospace',
-              border: '1px solid #D9CFC7',
+              background: 'var(--cc-surface-3, #1b1b23)',
+              color: 'var(--cc-cyan, #38bdf8)',
+              fontFamily: "var(--m, 'Geist Mono', monospace)",
+              border: '1px solid var(--cc-border, #23232c)',
               fontWeight: 600
             }}
             title="Indexed Branch"
@@ -679,10 +702,10 @@ const CodeCityWorkspaceInner = ({
               fontSize: '11px',
               padding: '3px 8px',
               borderRadius: '5px',
-              background: '#EFE9E3',
-              color: '#62574E',
-              fontFamily: 'monospace',
-              border: '1px solid #D9CFC7'
+              background: 'var(--cc-surface-3, #1b1b23)',
+              color: 'var(--cc-text-muted, #8b8b9a)',
+              fontFamily: "var(--m, 'Geist Mono', monospace)",
+              border: '1px solid var(--cc-border, #23232c)'
             }}
             title="Indexed Commit SHA"
           >
@@ -695,10 +718,10 @@ const CodeCityWorkspaceInner = ({
               fontSize: '10.5px',
               padding: '3px 8px',
               borderRadius: '5px',
-              background: currentRepoData?.hasCity ? 'rgba(100, 131, 107, 0.15)' : 'rgba(181, 138, 74, 0.15)',
-              color: currentRepoData?.hasCity ? '#64836B' : '#B58A4A',
+              background: currentRepoData?.hasCity ? 'rgba(52, 211, 153, 0.15)' : 'rgba(245, 185, 66, 0.15)',
+              color: currentRepoData?.hasCity ? '#34d399' : '#f5b942',
               fontWeight: 700,
-              border: `1px solid ${currentRepoData?.hasCity ? '#64836B' : '#B58A4A'}`
+              border: `1px solid ${currentRepoData?.hasCity ? '#34d399' : '#f5b942'}`
             }}
           >
             {currentRepoData?.hasCity ? 'ANALYZED' : 'INDEXED'}
@@ -712,9 +735,9 @@ const CodeCityWorkspaceInner = ({
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
-              background: '#FFFFFF',
-              border: '1px solid #D9CFC7',
-              color: reindexing ? '#81776F' : '#39332E',
+              background: 'var(--cc-surface, #0f0f13)',
+              border: '1px solid var(--cc-border, #23232c)',
+              color: reindexing ? 'var(--cc-text-muted, #8b8b9a)' : 'var(--cc-text, #ececf2)',
               borderRadius: '6px',
               padding: '5px 10px',
               fontSize: '11px',
@@ -729,16 +752,16 @@ const CodeCityWorkspaceInner = ({
         </div>
 
         {/* Renderer Mode Switcher */}
-        <div style={{ display: 'flex', gap: '3px', background: '#EFE9E3', borderRadius: '8px', padding: '3px' }}>
+        <div style={{ display: 'flex', gap: '3px', background: 'var(--cc-surface-3, #1b1b23)', borderRadius: '8px', padding: '3px', border: '1px solid var(--cc-border, #23232c)' }}>
           <button
             onClick={() => setRendererMode('metropolis')}
             style={{
-              height: '34px',
+              height: '30px',
               padding: '0 12px',
               border: 0,
               borderRadius: '6px',
-              background: rendererMode === 'metropolis' ? '#C9B59C' : 'transparent',
-              color: rendererMode === 'metropolis' ? '#39332E' : '#62574E',
+              background: rendererMode === 'metropolis' ? 'var(--cc-surface, #0f0f13)' : 'transparent',
+              color: rendererMode === 'metropolis' ? 'var(--cc-text, #ececf2)' : 'var(--cc-text-muted, #8b8b9a)',
               fontSize: '12px',
               fontWeight: 700,
               cursor: 'pointer',
@@ -753,12 +776,12 @@ const CodeCityWorkspaceInner = ({
           <button
             onClick={() => setRendererMode('diagram')}
             style={{
-              height: '34px',
+              height: '30px',
               padding: '0 12px',
               border: 0,
               borderRadius: '6px',
-              background: rendererMode === 'diagram' ? '#C9B59C' : 'transparent',
-              color: rendererMode === 'diagram' ? '#39332E' : '#62574E',
+              background: rendererMode === 'diagram' ? 'var(--cc-surface, #0f0f13)' : 'transparent',
+              color: rendererMode === 'diagram' ? 'var(--cc-text, #ececf2)' : 'var(--cc-text-muted, #8b8b9a)',
               fontSize: '12px',
               fontWeight: 700,
               cursor: 'pointer',
@@ -777,13 +800,13 @@ const CodeCityWorkspaceInner = ({
           <button
             onClick={() => setEndpointDropdownOpen(!endpointDropdownOpen)}
             style={{
-              height: '34px',
-              padding: '0 14px',
-              borderRadius: '8px',
-              border: '1px solid #C09A62',
-              background: '#FFFFFF',
-              color: '#39332E',
-              fontSize: '13px',
+              height: '32px',
+              padding: '0 12px',
+              borderRadius: '6px',
+              border: '1px solid var(--cc-border, #23232c)',
+              background: 'var(--cc-surface, #0f0f13)',
+              color: 'var(--cc-text, #ececf2)',
+              fontSize: '12px',
               fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
@@ -807,12 +830,12 @@ const CodeCityWorkspaceInner = ({
                 position: 'absolute',
                 left: 'calc(100% + 8px)',
                 top: 0,
-                height: '34px',
+                height: '32px',
                 padding: '0 10px',
-                borderRadius: '8px',
-                border: '1px solid #B7655D',
-                background: 'rgba(183, 101, 93, 0.12)',
-                color: '#B7655D',
+                borderRadius: '6px',
+                border: '1px solid rgba(242, 109, 109, 0.4)',
+                background: 'rgba(242, 109, 109, 0.12)',
+                color: '#f26d6d',
                 fontSize: '12px',
                 fontWeight: 600,
                 display: 'flex',
@@ -838,10 +861,10 @@ const CodeCityWorkspaceInner = ({
                 width: '380px',
                 maxHeight: '440px',
                 overflowY: 'auto',
-                background: '#FFFFFF',
-                border: '1px solid #D9CFC7',
+                background: 'var(--cc-surface, #0f0f13)',
+                border: '1px solid var(--cc-border, #23232c)',
                 borderRadius: '8px',
-                boxShadow: '0 8px 24px rgba(57, 51, 46, 0.12)',
+                boxShadow: '0 12px 30px rgba(0, 0, 0, 0.5)',
                 zIndex: 200,
                 padding: '8px'
               }}
@@ -856,10 +879,10 @@ const CodeCityWorkspaceInner = ({
                   width: '100%',
                   boxSizing: 'border-box',
                   padding: '7px 10px',
-                  background: '#F9F8F6',
-                  border: '1px solid #D9CFC7',
+                  background: 'var(--cc-surface-2, #15151b)',
+                  border: '1px solid var(--cc-border, #23232c)',
                   borderRadius: '6px',
-                  color: '#39332E',
+                  color: 'var(--cc-text, #ececf2)',
                   fontSize: '12px',
                   marginBottom: '8px',
                   outline: 'none'
@@ -878,10 +901,10 @@ const CodeCityWorkspaceInner = ({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
-                    background: !selectedEndpoint ? '#EFE9E3' : 'transparent',
-                    borderBottom: '1px solid #D9CFC7',
+                    background: !selectedEndpoint ? 'var(--cc-surface-3, #1b1b23)' : 'transparent',
+                    borderBottom: '1px solid var(--cc-border, #23232c)',
                     marginBottom: '6px',
-                    color: '#587C78',
+                    color: 'var(--cc-cyan, #38bdf8)',
                     fontWeight: 600,
                     fontSize: '12px'
                   }}
@@ -889,7 +912,7 @@ const CodeCityWorkspaceInner = ({
                   <span>🌆 Explore Entire Metropolis (Clear Route)</span>
                 </div>
                 {filteredEndpoints.length === 0 ? (
-                  <div style={{ padding: '12px', color: '#81776F', fontSize: '12px', textAlign: 'center' }}>
+                  <div style={{ padding: '12px', color: 'var(--cc-text-muted, #8b8b9a)', fontSize: '12px', textAlign: 'center' }}>
                     No matching endpoints found
                   </div>
                 ) : (
@@ -904,8 +927,8 @@ const CodeCityWorkspaceInner = ({
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
-                        background: selectedEndpoint?.id === ep.id ? '#EFE9E3' : 'transparent',
-                        borderBottom: '1px solid #EFE9E3'
+                        background: selectedEndpoint?.id === ep.id ? 'var(--cc-surface-3, #1b1b23)' : 'transparent',
+                        borderBottom: '1px solid var(--cc-border, #23232c)'
                       }}
                     >
                       <span
@@ -914,14 +937,14 @@ const CodeCityWorkspaceInner = ({
                           fontWeight: 700,
                           padding: '2px 6px',
                           borderRadius: '4px',
-                          background: 'rgba(88, 124, 120, 0.15)',
-                          color: '#587C78',
+                          background: 'rgba(56, 189, 248, 0.15)',
+                          color: '#38bdf8',
                           flexShrink: 0
                         }}
                       >
                         {ep.httpMethod}
                       </span>
-                      <span style={{ fontSize: '12px', color: '#39332E', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--cc-text, #ececf2)', fontFamily: "var(--m, 'Geist Mono', monospace)", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {ep.routePath}
                       </span>
                     </div>
@@ -936,12 +959,12 @@ const CodeCityWorkspaceInner = ({
         <button
           onClick={() => setIntelligenceOpen(!intelligenceOpen)}
           style={{
-            height: '34px',
+            height: '32px',
             padding: '0 12px',
-            borderRadius: '8px',
-            border: '1px solid #C9B59C',
-            background: intelligenceOpen ? '#C9B59C' : 'rgba(201, 181, 156, 0.2)',
-            color: '#39332E',
+            borderRadius: '6px',
+            border: '1px solid var(--cc-border, #23232c)',
+            background: intelligenceOpen ? 'var(--cc-surface-3, #1b1b23)' : 'var(--cc-surface, #0f0f13)',
+            color: 'var(--cc-text, #ececf2)',
             fontSize: '12px',
             fontWeight: 700,
             display: 'flex',
@@ -960,7 +983,7 @@ const CodeCityWorkspaceInner = ({
                 fontWeight: 800,
                 padding: '1px 6px',
                 borderRadius: '10px',
-                background: intelligenceData.warnings.some(w => w.severity === 'CRITICAL') ? '#B7655D' : '#B58A4A',
+                background: intelligenceData.warnings.some(w => w.severity === 'CRITICAL') ? '#f26d6d' : '#f5b942',
                 color: '#ffffff'
               }}
             >
@@ -970,8 +993,8 @@ const CodeCityWorkspaceInner = ({
         </button>
 
         {/* Global Search Box */}
-        <div style={{ position: 'relative', width: '240px', marginLeft: '0px' }}>
-          <Search size={13} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#81776F' }} />
+        <div style={{ position: 'relative', width: '220px', marginLeft: '0px' }}>
+          <Search size={13} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--cc-text-muted, #8b8b9a)' }} />
           <input
             type="text"
             placeholder="Search city..."
@@ -981,18 +1004,18 @@ const CodeCityWorkspaceInner = ({
               width: '100%',
               boxSizing: 'border-box',
               padding: '6px 12px 6px 30px',
-              background: '#FFFFFF',
-              border: '1px solid #D9CFC7',
+              background: 'var(--cc-surface, #0f0f13)',
+              border: '1px solid var(--cc-border, #23232c)',
               borderRadius: '6px',
               fontSize: '12px',
-              color: '#39332E',
+              color: 'var(--cc-text, #ececf2)',
               outline: 'none'
             }}
           />
           {globalSearch && (
             <button
               onClick={() => setGlobalSearch('')}
-              style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#81776F', cursor: 'pointer' }}
+              style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--cc-text-muted, #8b8b9a)', cursor: 'pointer' }}
             >
               ×
             </button>
@@ -1006,10 +1029,10 @@ const CodeCityWorkspaceInner = ({
                 top: 'calc(100% + 4px)',
                 left: 0,
                 right: 0,
-                background: '#FFFFFF',
-                border: '1px solid #D9CFC7',
+                background: 'var(--cc-surface, #0f0f13)',
+                border: '1px solid var(--cc-border, #23232c)',
                 borderRadius: '8px',
-                boxShadow: '0 8px 24px rgba(57, 51, 46, 0.12)',
+                boxShadow: '0 12px 30px rgba(0, 0, 0, 0.5)',
                 zIndex: 100,
                 maxHeight: '260px',
                 overflowY: 'auto'
@@ -1025,15 +1048,15 @@ const CodeCityWorkspaceInner = ({
                     gap: '8px',
                     padding: '8px 10px',
                     cursor: 'pointer',
-                    borderBottom: '1px solid #EFE9E3'
+                    borderBottom: '1px solid var(--cc-border, #23232c)'
                   }}
                 >
-                  <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 5px', borderRadius: '4px', background: 'rgba(88, 124, 120, 0.15)', color: '#587C78' }}>
+                  <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 5px', borderRadius: '4px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }}>
                     {item.type}
                   </span>
                   <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                    <div style={{ fontSize: '12px', color: '#39332E' }}>{item.name}</div>
-                    <div style={{ fontSize: '10px', color: '#81776F' }}>{item.meta}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--cc-text, #ececf2)' }}>{item.name}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--cc-text-muted, #8b8b9a)' }}>{item.meta}</div>
                   </div>
                 </div>
               ))}
@@ -1042,20 +1065,20 @@ const CodeCityWorkspaceInner = ({
         </div>
 
         {/* Level Pills: 1 · City, 2 · District, 3 · Building */}
-        <div style={{ display: 'flex', gap: '4px', background: '#EFE9E3', borderRadius: '10px', padding: '3px' }}>
+        <div style={{ display: 'flex', gap: '3px', background: 'var(--cc-surface-3, #1b1b23)', borderRadius: '8px', padding: '3px', border: '1px solid var(--cc-border, #23232c)' }}>
           <button
             onClick={() => {
               setSemanticZoom('districts');
               fitView({ padding: 0.35, duration: 500 });
             }}
             style={{
-              height: '34px',
-              padding: '0 14px',
+              height: '30px',
+              padding: '0 12px',
               border: 0,
-              borderRadius: '8px',
-              background: semanticZoom === 'districts' ? '#C9B59C' : 'transparent',
-              color: semanticZoom === 'districts' ? '#39332E' : '#62574E',
-              fontSize: '12.5px',
+              borderRadius: '6px',
+              background: semanticZoom === 'districts' ? 'var(--cc-surface, #0f0f13)' : 'transparent',
+              color: semanticZoom === 'districts' ? 'var(--cc-text, #ececf2)' : 'var(--cc-text-muted, #8b8b9a)',
+              fontSize: '12px',
               fontWeight: semanticZoom === 'districts' ? 600 : 500,
               cursor: 'pointer',
               transition: 'all 0.15s ease'
@@ -1069,13 +1092,13 @@ const CodeCityWorkspaceInner = ({
               fitView({ padding: 0.15, duration: 500 });
             }}
             style={{
-              height: '34px',
-              padding: '0 14px',
+              height: '30px',
+              padding: '0 12px',
               border: 0,
-              borderRadius: '8px',
-              background: semanticZoom === 'buildings' ? '#C9B59C' : 'transparent',
-              color: semanticZoom === 'buildings' ? '#39332E' : '#62574E',
-              fontSize: '12.5px',
+              borderRadius: '6px',
+              background: semanticZoom === 'buildings' ? 'var(--cc-surface, #0f0f13)' : 'transparent',
+              color: semanticZoom === 'buildings' ? 'var(--cc-text, #ececf2)' : 'var(--cc-text-muted, #8b8b9a)',
+              fontSize: '12px',
               fontWeight: semanticZoom === 'buildings' ? 600 : 500,
               cursor: 'pointer',
               transition: 'all 0.15s ease'
@@ -1086,13 +1109,13 @@ const CodeCityWorkspaceInner = ({
           <button
             onClick={() => setSemanticZoom('rooms')}
             style={{
-              height: '34px',
-              padding: '0 14px',
+              height: '30px',
+              padding: '0 12px',
               border: 0,
-              borderRadius: '8px',
-              background: semanticZoom === 'rooms' ? '#C9B59C' : 'transparent',
-              color: semanticZoom === 'rooms' ? '#39332E' : '#62574E',
-              fontSize: '12.5px',
+              borderRadius: '6px',
+              background: semanticZoom === 'rooms' ? 'var(--cc-surface, #0f0f13)' : 'transparent',
+              color: semanticZoom === 'rooms' ? 'var(--cc-text, #ececf2)' : 'var(--cc-text-muted, #8b8b9a)',
+              fontSize: '12px',
               fontWeight: semanticZoom === 'rooms' ? 600 : 500,
               cursor: 'pointer',
               transition: 'all 0.15s ease'
@@ -1102,22 +1125,40 @@ const CodeCityWorkspaceInner = ({
           </button>
         </div>
 
-        {/* Fit View Fullscreen Button */}
+        {/* Fit View Button */}
         <button
           onClick={() => fitView({ padding: 0.15, duration: 400 })}
           style={{
-            background: '#FFFFFF',
-            border: '1px solid #D9CFC7',
-            color: '#39332E',
-            padding: '8px 10px',
-            borderRadius: '8px',
+            background: 'var(--cc-surface, #0f0f13)',
+            border: '1px solid var(--cc-border, #23232c)',
+            color: 'var(--cc-text, #ececf2)',
+            padding: '7px 9px',
+            borderRadius: '6px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center'
           }}
           title="Fit City to Viewport"
         >
-          <Maximize2 size={15} />
+          <Maximize2 size={14} />
+        </button>
+
+        {/* Fullscreen Toggle Button */}
+        <button
+          onClick={toggleFullscreen}
+          style={{
+            background: 'var(--cc-surface, #0f0f13)',
+            border: '1px solid var(--cc-border, #23232c)',
+            color: 'var(--cc-text, #ececf2)',
+            padding: '7px 9px',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center'
+          }}
+          title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+        >
+          {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
         </button>
 
         {/* User Account & Sign Out Controls */}
@@ -1128,17 +1169,17 @@ const CodeCityWorkspaceInner = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                background: '#FFFFFF',
-                border: '1px solid #D9CFC7',
-                borderRadius: '8px',
+                background: 'var(--cc-surface, #0f0f13)',
+                border: '1px solid var(--cc-border, #23232c)',
+                borderRadius: '6px',
                 padding: '4px 10px',
                 fontSize: '12px',
                 fontWeight: 600,
-                color: '#39332E'
+                color: 'var(--cc-text, #ececf2)'
               }}
               title={`Logged in as ${auth.user.email}`}
             >
-              <User size={13} color="#7A5C38" />
+              <User size={13} color="var(--cc-accent, #6d8cff)" />
               <span style={{ maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {auth.user.email}
               </span>
@@ -1149,13 +1190,13 @@ const CodeCityWorkspaceInner = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
-                background: '#FFFFFF',
-                border: '1px solid #D9CFC7',
-                borderRadius: '8px',
-                padding: '6px 10px',
+                background: 'var(--cc-surface, #0f0f13)',
+                border: '1px solid var(--cc-border, #23232c)',
+                borderRadius: '6px',
+                padding: '5px 10px',
                 fontSize: '12px',
                 fontWeight: 600,
-                color: '#8B4513',
+                color: '#f26d6d',
                 cursor: 'pointer'
               }}
               title="Sign Out"
@@ -1172,13 +1213,13 @@ const CodeCityWorkspaceInner = ({
           ========================================================================= */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
         {/* Interactive Software City Canvas */}
-        <main style={{ flex: 1, height: '100%', position: 'relative', background: '#F9F8F6' }}>
+        <main style={{ flex: 1, height: '100%', position: 'relative', background: 'var(--cc-bg, #09090c)' }}>
           {loading && (
             <div
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: 'rgba(249, 248, 246, 0.85)',
+                background: 'rgba(9, 9, 12, 0.85)',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -1187,7 +1228,7 @@ const CodeCityWorkspaceInner = ({
               }}
             >
               <div className="city-spinner" />
-              <span style={{ color: '#39332E', fontSize: '13px', marginTop: '12px' }}>
+              <span style={{ color: 'var(--cc-text, #ececf2)', fontSize: '13px', marginTop: '12px' }}>
                 Constructing Software City...
               </span>
             </div>

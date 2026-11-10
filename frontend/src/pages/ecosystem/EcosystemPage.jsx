@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -9,7 +9,7 @@ import {
   MarkerType
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { BookOpen, RefreshCw, Filter, Sliders, AlertTriangle, Layers, Zap } from 'lucide-react';
+import { BookOpen, RefreshCw, Filter, Sliders, AlertTriangle, Layers, Zap, Maximize2, Minimize2 } from 'lucide-react';
 import { graphApi } from '../../api/graphApi';
 import { layoutEngine } from '../../layout/layoutEngine';
 import { RepositoryNode } from './RepositoryNode';
@@ -46,6 +46,42 @@ export const EcosystemPage = ({
   const [divergenceFilter, setDivergenceFilter] = useState('ALL'); // 'ALL', 'DIVERGENT', 'CONSISTENT'
   const [minRepoUsage, setMinRepoUsage] = useState(1);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const workspaceRef = useRef(null);
+
+  const [isDark, setIsDark] = useState(() => {
+    return document.documentElement.getAttribute('data-theme') !== 'light' &&
+           document.documentElement.getAttribute('data-t') !== 'l';
+  });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const isL = document.documentElement.getAttribute('data-theme') === 'light' ||
+                  document.documentElement.getAttribute('data-t') === 'l';
+      setIsDark(!isL);
+    };
+    window.addEventListener('plexus-theme-changed', handleThemeChange);
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-t'] });
+    return () => {
+      window.removeEventListener('plexus-theme-changed', handleThemeChange);
+      observer.disconnect();
+    };
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      workspaceRef.current?.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -175,7 +211,8 @@ export const EcosystemPage = ({
       const isHighlighted = selectedNodeId && (src === selectedNodeId || tgt === selectedNodeId);
       const isDimmed = selectedNodeId && !isHighlighted;
       const isNpm = (e.packageType || '').toUpperCase() === 'NPM';
-      const color = isNpm ? '#64836B' : '#71869B';
+      const defaultColor = isDark ? (isNpm ? '#10b981' : '#38bdf8') : (isNpm ? '#0b8f60' : '#2563eb');
+      const edgeStroke = isHighlighted ? (isDark ? '#6d8cff' : '#3552d6') : isDimmed ? (isDark ? '#23232c' : '#e2e8f0') : defaultColor;
 
       return {
         id: e.id || `e-${src}-${tgt}-${idx}`,
@@ -183,16 +220,16 @@ export const EcosystemPage = ({
         target: tgt,
         animated: isHighlighted || e.isDev,
         style: {
-          stroke: isHighlighted ? '#C09A62' : isDimmed ? '#D9CFC7' : color,
+          stroke: edgeStroke,
           strokeWidth: isHighlighted ? 2.5 : 1.5,
-          opacity: isDimmed ? 0.2 : 0.85,
+          opacity: isDimmed ? 0.15 : 0.85,
           strokeDasharray: e.isDev ? '4,4' : undefined
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
           width: isHighlighted ? 18 : 14,
           height: isHighlighted ? 18 : 14,
-          color: isHighlighted ? '#C09A62' : isDimmed ? '#D9CFC7' : color
+          color: edgeStroke
         },
         data: {
           ...e,
@@ -259,7 +296,7 @@ export const EcosystemPage = ({
   const divergentCount = bipartiteData?.nodes?.filter(n => n.nodeCategory === 'DEPENDENCY' && n.isDivergent)?.length || 0;
 
   return (
-    <div className="graph-workspace">
+    <div className="graph-workspace" ref={workspaceRef}>
       {/* Top Toolbar */}
       <div className="graph-toolbar">
         <div className="graph-toolbar-group">
@@ -348,6 +385,13 @@ export const EcosystemPage = ({
             <RefreshCw size={13} className={loading ? 'spin-icon' : ''} />
             <span>Refresh</span>
           </button>
+          <button
+            className="graph-btn"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+          >
+            {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+          </button>
         </div>
       </div>
 
@@ -409,11 +453,15 @@ export const EcosystemPage = ({
               minZoom={0.1}
               maxZoom={2.5}
             >
-              <Background color="#D9CFC7" gap={20} size={1} />
+              <Background color={isDark ? '#23232c' : '#d3d8e2'} gap={20} size={1} />
               <Controls showInteractive={false} />
               <MiniMap
-                nodeColor={(node) => (node.type === 'repository' ? '#8D916B' : node.data?.isDivergent ? '#B58A4A' : '#71869B')}
-                maskColor="rgba(0, 0, 0, 0.05)"
+                nodeColor={(node) => {
+                  if (node.type === 'repository') return isDark ? '#6d8cff' : '#3552d6';
+                  if (node.data?.isDivergent) return isDark ? '#f5b942' : '#a86a00';
+                  return isDark ? '#38bdf8' : '#0278b8';
+                }}
+                maskColor={isDark ? 'rgba(0, 0, 0, 0.45)' : 'rgba(0, 0, 0, 0.05)'}
               />
             </ReactFlow>
 

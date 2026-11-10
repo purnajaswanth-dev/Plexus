@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -9,7 +9,7 @@ import {
   MarkerType
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { GitBranch, RefreshCw, Filter, Sliders, ShieldCheck, Zap } from 'lucide-react';
+import { GitBranch, RefreshCw, Filter, Sliders, ShieldCheck, Zap, Maximize2, Minimize2 } from 'lucide-react';
 import { graphApi } from '../../api/graphApi';
 import { layoutEngine } from '../../layout/layoutEngine';
 import { RepoNetworkNode } from './RepoNetworkNode';
@@ -36,6 +36,42 @@ export const RelationshipsPage = ({ onNavigateToArchitecture }) => {
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [isolateSelected, setIsolateSelected] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const workspaceRef = useRef(null);
+
+  const [isDark, setIsDark] = useState(() => {
+    return document.documentElement.getAttribute('data-theme') !== 'light' &&
+           document.documentElement.getAttribute('data-t') !== 'l';
+  });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const isL = document.documentElement.getAttribute('data-theme') === 'light' ||
+                  document.documentElement.getAttribute('data-t') === 'l';
+      setIsDark(!isL);
+    };
+    window.addEventListener('plexus-theme-changed', handleThemeChange);
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-t'] });
+    return () => {
+      window.removeEventListener('plexus-theme-changed', handleThemeChange);
+      observer.disconnect();
+    };
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      workspaceRef.current?.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -151,15 +187,17 @@ export const RelationshipsPage = ({ onNavigateToArchitecture }) => {
       const isHighlighted = selectedNodeId && (src === String(selectedNodeId) || tgt === String(selectedNodeId));
       const isDimmed = selectedNodeId && !isHighlighted;
       const weight = e.weight || 1;
+      const defaultColor = isDark ? '#38bdf8' : '#2563eb';
+      const edgeStroke = isHighlighted ? (isDark ? '#6d8cff' : '#3552d6') : isDimmed ? (isDark ? '#23232c' : '#e2e8f0') : defaultColor;
 
       return {
         id: e.id || `e-${src}-${tgt}-${idx}`,
         source: src,
         target: tgt,
         style: {
-          stroke: isHighlighted ? '#587C78' : isDimmed ? '#D9CFC7' : '#81776F',
+          stroke: edgeStroke,
           strokeWidth: Math.max(1.8, Math.min(6, Math.sqrt(weight) * 1.8)),
-          opacity: isDimmed ? 0.2 : 0.85
+          opacity: isDimmed ? 0.15 : 0.85
         },
         data: {
           ...e,
@@ -230,7 +268,7 @@ export const RelationshipsPage = ({ onNavigateToArchitecture }) => {
   const connectedRepoCount = nodes.filter(n => !n.data?.isIsolated).length;
 
   return (
-    <div className="graph-workspace">
+    <div className="graph-workspace" ref={workspaceRef}>
       {/* Top Toolbar */}
       <div className="graph-toolbar">
         <div className="graph-toolbar-group">
@@ -330,6 +368,13 @@ export const RelationshipsPage = ({ onNavigateToArchitecture }) => {
           <button className="graph-btn" onClick={loadData} title="Refresh relationship graph">
             <RefreshCw size={13} className={loading ? 'spin-icon' : ''} />
           </button>
+          <button
+            className="graph-btn"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+          >
+            {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+          </button>
         </div>
       </div>
 
@@ -391,11 +436,11 @@ export const RelationshipsPage = ({ onNavigateToArchitecture }) => {
               minZoom={0.2}
               maxZoom={3}
             >
-              <Background color="#D9CFC7" gap={20} size={1} />
+              <Background color={isDark ? '#23232c' : '#d3d8e2'} gap={20} size={1} />
               <Controls showInteractive={false} />
               <MiniMap
-                nodeColor={(node) => (node.data?.group === 'NPM' ? '#64836B' : '#8D916B')}
-                maskColor="rgba(0, 0, 0, 0.05)"
+                nodeColor={(node) => (node.data?.group === 'NPM' ? (isDark ? '#34d399' : '#0b8f60') : (isDark ? '#6d8cff' : '#3552d6'))}
+                maskColor={isDark ? 'rgba(0, 0, 0, 0.45)' : 'rgba(0, 0, 0, 0.05)'}
               />
             </ReactFlow>
 

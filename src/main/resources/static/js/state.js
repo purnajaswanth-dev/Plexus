@@ -3,7 +3,7 @@
  */
 const State = {
     currentView: 'overview',
-    theme: localStorage.getItem('dim_theme') || 'light',
+    theme: localStorage.getItem('dim_theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'),
     sidebarCollapsed: localStorage.getItem('dim_sidebar_collapsed') === 'true',
     
     // Cached data
@@ -41,7 +41,9 @@ const State = {
         this.theme = newTheme;
         localStorage.setItem('dim_theme', newTheme);
         document.documentElement.setAttribute('data-theme', newTheme);
+        document.documentElement.setAttribute('data-t', newTheme === 'light' ? 'l' : 'd');
         this.notify('themeChanged', newTheme);
+        window.dispatchEvent(new CustomEvent('plexus-theme-changed', { detail: { theme: newTheme } }));
     },
 
     toggleTheme() {
@@ -62,4 +64,3 @@ const State = {
         this.setSidebarCollapsed(!this.sidebarCollapsed);
     }
 };
-

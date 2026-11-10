@@ -3,6 +3,7 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
+  Minimize2,
   Compass,
   Layers,
   Search,
@@ -43,7 +44,100 @@ export const MetropolisCityViewport = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
   const [showMinimap, setShowMinimap] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
+
+  const [isDark, setIsDark] = useState(() => {
+    return document.documentElement.getAttribute('data-theme') !== 'light' &&
+           document.documentElement.getAttribute('data-t') !== 'l';
+  });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const isL = document.documentElement.getAttribute('data-theme') === 'light' ||
+                  document.documentElement.getAttribute('data-t') === 'l';
+      setIsDark(!isL);
+    };
+    window.addEventListener('plexus-theme-changed', handleThemeChange);
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-t'] });
+    return () => {
+      window.removeEventListener('plexus-theme-changed', handleThemeChange);
+      observer.disconnect();
+    };
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  const cityTheme = useMemo(() => {
+    if (isDark) {
+      return {
+        bg: '#09090c',
+        groundPerimeter: '#0e0e13',
+        groundBorder: '#23232c',
+        gridDot: '#262631',
+        roadBed: '#14141b',
+        roadLane: '#262631',
+        roadAvenue: '#181822',
+        roadCenterline: '#38bdf8',
+        intersection: '#181822',
+        intersectionBorder: '#272731',
+        intersectionSignal: '#38bdf8',
+        districtFill: '#0e0e13',
+        districtBorder: '#272731',
+        districtHeaderFill: '#15151b',
+        districtText: '#ececf2',
+        districtSubtext: '#8b8b9a',
+        orientationFill: '#15151b',
+        orientationBorder: '#272731',
+        orientationText: '#ececf2',
+        compassAccent: '#38bdf8',
+        hudBg: 'rgba(15, 15, 19, 0.94)',
+        hudBorder: '#23232c',
+        hudText: '#ececf2',
+        hudMuted: '#8b8b9a'
+      };
+    } else {
+      return {
+        bg: '#eceef3',
+        groundPerimeter: '#fafbfc',
+        groundBorder: '#d0d5df',
+        gridDot: '#d3d8e2',
+        roadBed: '#ffffff',
+        roadLane: '#e3e6ed',
+        roadAvenue: '#ffffff',
+        roadCenterline: '#0278b8',
+        intersection: '#ffffff',
+        intersectionBorder: '#d0d5df',
+        intersectionSignal: '#0278b8',
+        districtFill: '#fafbfc',
+        districtBorder: '#d0d5df',
+        districtHeaderFill: '#f4f5f8',
+        districtText: '#12141a',
+        districtSubtext: '#586073',
+        orientationFill: '#ffffff',
+        orientationBorder: '#d0d5df',
+        orientationText: '#12141a',
+        compassAccent: '#0278b8',
+        hudBg: 'rgba(255, 255, 255, 0.94)',
+        hudBorder: '#e3e6ed',
+        hudText: '#12141a',
+        hudMuted: '#586073'
+      };
+    }
+  }, [isDark]);
 
   // Layer Toggles
   const [showStreets, setShowStreets] = useState(true);
@@ -433,11 +527,49 @@ export const MetropolisCityViewport = ({
     const isUnsupported = bldg.gapStatus === 'UNSUPPORTED' || (bldg.fileName && (bldg.fileName.endsWith('.yml') || bldg.fileName.endsWith('.yaml') || bldg.fileName.endsWith('.properties')));
     const isExternal = bldg.componentType === 'EXTERNAL' || (bldg.districtName && bldg.districtName.toUpperCase().includes('EXTERNAL'));
 
+    if (isDark) {
+      if (isUnsupported) {
+        return { fill: '#14141b', isUnsupported: true, isExternal: false, textFill: '#8b8b9a', stroke: '#272731' };
+      }
+      if (isExternal) {
+        return { fill: '#1a1014', isUnsupported: false, isExternal: true, textFill: '#f87171', stroke: '#ef4444', chipBg: '#ef4444', chipText: '#ffffff' };
+      }
+
+      const type = (bldg.componentType || '').toUpperCase();
+      const name = (bldg.name || '').toUpperCase();
+      const dist = (bldg.districtName || '').toUpperCase();
+
+      if (type.includes('CONTROLLER') || name.includes('CONTROLLER') || dist.includes('CONTROLLER') || dist.includes('API')) {
+        return { fill: '#162033', textFill: '#ececf2', stroke: '#38bdf8', chipBg: '#0284c7', chipText: '#ffffff' };
+      }
+      if (type.includes('SERVICE') || name.includes('SERVICE') || dist.includes('SERVICE')) {
+        return { fill: '#151b2c', textFill: '#ececf2', stroke: '#6d8cff', chipBg: '#4f46e5', chipText: '#ffffff' };
+      }
+      if (type.includes('REPOSITORY') || type.includes('DAO') || name.includes('REPOSITORY') || name.includes('DAO') || dist.includes('REPOSITORY')) {
+        return { fill: '#10221c', textFill: '#ececf2', stroke: '#34d399', chipBg: '#059669', chipText: '#ffffff' };
+      }
+      if (type.includes('ENTITY') || type.includes('MODEL') || type.includes('DTO') || dist.includes('ENTITY') || dist.includes('DOMAIN')) {
+        return { fill: '#241b0f', textFill: '#ececf2', stroke: '#f5b942', chipBg: '#d97706', chipText: '#ffffff' };
+      }
+      if (type.includes('CONFIG') || name.includes('CONFIG') || dist.includes('CONFIG') || dist.includes('SECURITY')) {
+        return { fill: '#23162a', textFill: '#ececf2', stroke: '#a855f7', chipBg: '#7c3aed', chipText: '#ffffff' };
+      }
+      if (type.includes('EVENT') || name.includes('EVENT') || name.includes('LISTENER') || dist.includes('EVENT')) {
+        return { fill: '#231320', textFill: '#ececf2', stroke: '#ec4899', chipBg: '#db2777', chipText: '#ffffff' };
+      }
+      if (type.includes('UTIL') || name.includes('UTIL') || dist.includes('UTIL')) {
+        return { fill: '#181820', textFill: '#ececf2', stroke: '#52525b', chipBg: '#52525b', chipText: '#ffffff' };
+      }
+
+      return { fill: '#15151b', textFill: '#ececf2', stroke: '#3f3f46', chipBg: '#3f3f46', chipText: '#ffffff' };
+    }
+
+    // Light Theme
     if (isUnsupported) {
       return { fill: '#EFE9E3', isUnsupported: true, isExternal: false, textFill: '#62574E', stroke: '#D9CFC7' };
     }
     if (isExternal) {
-      return { fill: '#FFFFFF', isUnsupported: false, isExternal: true, textFill: '#B77C61', stroke: '#B77C61' };
+      return { fill: '#FFFFFF', isUnsupported: false, isExternal: true, textFill: '#B77C61', stroke: '#B77C61', chipBg: '#B77C61', chipText: '#FFFFFF' };
     }
 
     const type = (bldg.componentType || '').toUpperCase();
@@ -467,7 +599,7 @@ export const MetropolisCityViewport = ({
     }
 
     return { fill: '#71869B', textFill: '#FFFFFF', stroke: 'none', chipBg: '#71869B', chipText: '#FFFFFF' };
-  }, []);
+  }, [isDark]);
 
   // Filtered Districts & Buildings
   const visibleDistricts = useMemo(() => {
@@ -708,12 +840,12 @@ export const MetropolisCityViewport = ({
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
-              background: 'rgba(239, 233, 227, 0.96)',
+              background: cityTheme.hudBg,
               backdropFilter: 'blur(10px)',
-              border: '1px solid #D9CFC7',
+              border: `1px solid ${cityTheme.hudBorder}`,
               borderRadius: '8px',
               padding: '4px 6px',
-              boxShadow: '0 4px 16px rgba(57, 51, 46, 0.08)',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)',
               pointerEvents: 'auto'
             }}
           >
@@ -731,8 +863,8 @@ export const MetropolisCityViewport = ({
                   padding: '4px 8px',
                   borderRadius: '6px',
                   border: 'none',
-                  background: zoomLevel.id === lvl.id ? '#C9B59C' : 'transparent',
-                  color: zoomLevel.id === lvl.id ? '#39332E' : '#62574E',
+                  background: zoomLevel.id === lvl.id ? (isDark ? 'var(--cc-accent, #6d8cff)' : 'var(--cc-border-2, #cdd2dd)') : 'transparent',
+                  color: zoomLevel.id === lvl.id ? (isDark ? '#ffffff' : '#12141a') : cityTheme.hudMuted,
                   fontSize: '11px',
                   fontWeight: zoomLevel.id === lvl.id ? 700 : 500,
                   cursor: 'pointer',
@@ -743,32 +875,39 @@ export const MetropolisCityViewport = ({
               </button>
             ))}
 
-            <div style={{ width: '1px', height: '16px', background: '#D9CFC7', margin: '0 4px' }} />
+            <div style={{ width: '1px', height: '16px', background: cityTheme.hudBorder, margin: '0 4px' }} />
 
-            <span style={{ fontSize: '11px', color: '#62574E', fontWeight: 600, padding: '0 4px' }}>
+            <span style={{ fontSize: '11px', color: cityTheme.hudMuted, fontWeight: 600, padding: '0 4px' }}>
               {Math.round(zoom * 100)}%
             </span>
 
             <button
               onClick={() => setZoom(z => Math.min(z * 1.25, 3.5))}
               title="Zoom In"
-              style={{ background: 'transparent', border: 'none', color: '#62574E', padding: '4px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
+              style={{ background: 'transparent', border: 'none', color: cityTheme.hudMuted, padding: '4px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
             >
               <ZoomIn size={13} />
             </button>
             <button
               onClick={() => setZoom(z => Math.max(z * 0.8, 0.22))}
               title="Zoom Out"
-              style={{ background: 'transparent', border: 'none', color: '#62574E', padding: '4px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
+              style={{ background: 'transparent', border: 'none', color: cityTheme.hudMuted, padding: '4px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
             >
               <ZoomOut size={13} />
             </button>
             <button
               onClick={fitView}
               title="Fit Metropolis into Canvas"
-              style={{ background: 'transparent', border: 'none', color: '#587C78', padding: '4px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
+              style={{ background: 'transparent', border: 'none', color: isDark ? '#38bdf8' : '#0278b8', padding: '4px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
             >
-              <Maximize2 size={13} />
+              <Compass size={13} />
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              style={{ background: 'transparent', border: 'none', color: isDark ? '#38bdf8' : '#0278b8', padding: '4px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
+            >
+              {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
             </button>
           </div>
         </div>
@@ -781,16 +920,16 @@ export const MetropolisCityViewport = ({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                background: 'rgba(239, 233, 227, 0.96)',
+                background: cityTheme.hudBg,
                 backdropFilter: 'blur(10px)',
-                border: '1px solid #D9CFC7',
+                border: `1px solid ${cityTheme.hudBorder}`,
                 borderRadius: '8px',
                 padding: '5px 10px',
-                boxShadow: '0 4px 16px rgba(57, 51, 46, 0.08)',
-                color: '#39332E'
+                boxShadow: isDark ? '0 4px 16px rgba(0, 0, 0, 0.4)' : '0 4px 16px rgba(18, 20, 26, 0.06)',
+                color: cityTheme.hudText
               }}
             >
-              <Search size={13} style={{ color: '#81776F', marginRight: '6px', flexShrink: 0 }} />
+              <Search size={13} style={{ color: cityTheme.hudMuted, marginRight: '6px', flexShrink: 0 }} />
               <input
                 type="text"
                 placeholder="Search file, class, method..."
@@ -800,16 +939,16 @@ export const MetropolisCityViewport = ({
                   background: 'transparent',
                   border: 'none',
                   outline: 'none',
-                  color: '#39332E',
+                  color: cityTheme.hudText,
                   width: '100%',
                   fontSize: '11.5px',
-                  fontFamily: "'Inter', sans-serif"
+                  fontFamily: 'inherit'
                 }}
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  style={{ background: 'none', border: 'none', color: '#81776F', cursor: 'pointer', fontSize: '12px' }}
+                  style={{ background: 'none', border: 'none', color: cityTheme.hudMuted, cursor: 'pointer', fontSize: '12px' }}
                 >
                   ✕
                 </button>
@@ -824,10 +963,11 @@ export const MetropolisCityViewport = ({
                   top: 'calc(100% + 4px)',
                   left: 0,
                   width: '300px',
-                  background: '#FFFFFF',
-                  border: '1px solid #D9CFC7',
+                  background: cityTheme.hudBg,
+                  backdropFilter: 'blur(10px)',
+                  border: `1px solid ${cityTheme.hudBorder}`,
                   borderRadius: '8px',
-                  boxShadow: '0 8px 24px rgba(57, 51, 46, 0.12)',
+                  boxShadow: isDark ? '0 8px 24px rgba(0, 0, 0, 0.6)' : '0 8px 24px rgba(18, 20, 26, 0.12)',
                   padding: '4px 0',
                   zIndex: 50,
                   fontSize: '11.5px',
@@ -866,9 +1006,9 @@ export const MetropolisCityViewport = ({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      borderBottom: '1px solid #EFE9E3'
+                      borderBottom: `1px solid ${cityTheme.hudBorder}`
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#EFE9E3'}
+                    onMouseEnter={(e) => e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
@@ -878,17 +1018,17 @@ export const MetropolisCityViewport = ({
                           fontWeight: 700,
                           padding: '1px 5px',
                           borderRadius: '4px',
-                          background: '#EFE9E3',
-                          color: '#587C78'
+                          background: isDark ? '#1a1a23' : '#eef1f6',
+                          color: '#38bdf8'
                         }}
                       >
                         {res.type}
                       </span>
-                      <span style={{ fontWeight: 600, color: '#39332E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontWeight: 600, color: cityTheme.hudText, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {truncate(res.name, 24)}
                       </span>
                     </div>
-                    <span style={{ fontSize: '9.5px', color: '#81776F', marginLeft: '6px', flexShrink: 0 }}>
+                    <span style={{ fontSize: '9.5px', color: cityTheme.hudMuted, marginLeft: '6px', flexShrink: 0 }}>
                       {truncate(res.district, 14)}
                     </span>
                   </div>
@@ -910,15 +1050,17 @@ export const MetropolisCityViewport = ({
               }
             }}
             style={{
-              background: '#EFE9E3',
-              border: '1px solid #D9CFC7',
-              color: '#39332E',
+              background: cityTheme.hudBg,
+              backdropFilter: 'blur(10px)',
+              border: `1px solid ${cityTheme.hudBorder}`,
+              color: cityTheme.hudText,
               borderRadius: '8px',
               padding: '5px 10px',
               fontSize: '11.5px',
               fontWeight: 600,
               outline: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              boxShadow: isDark ? '0 4px 16px rgba(0, 0, 0, 0.4)' : '0 4px 16px rgba(18, 20, 26, 0.06)'
             }}
           >
             <option value="ALL">🌆 Entire Metropolis</option>
@@ -933,15 +1075,15 @@ export const MetropolisCityViewport = ({
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
-              background: 'rgba(239, 233, 227, 0.96)',
+              background: cityTheme.hudBg,
               backdropFilter: 'blur(10px)',
-              border: '1px solid #D9CFC7',
+              border: `1px solid ${cityTheme.hudBorder}`,
               borderRadius: '8px',
               padding: '3px 6px',
-              boxShadow: '0 4px 16px rgba(57, 51, 46, 0.08)'
+              boxShadow: isDark ? '0 4px 16px rgba(0, 0, 0, 0.4)' : '0 4px 16px rgba(18, 20, 26, 0.06)'
             }}
           >
-            <span style={{ fontSize: '10.5px', color: '#81776F', fontWeight: 600, marginRight: '2px' }}>
+            <span style={{ fontSize: '10.5px', color: cityTheme.hudMuted, fontWeight: 600, marginRight: '2px' }}>
               Overlays:
             </span>
 
@@ -964,9 +1106,9 @@ export const MetropolisCityViewport = ({
                   padding: '3px 7px',
                   borderRadius: '5px',
                   border: '1px solid',
-                  borderColor: overlayFilters[ov.key] ? ov.color : '#D9CFC7',
-                  background: overlayFilters[ov.key] ? '#FFFFFF' : 'transparent',
-                  color: overlayFilters[ov.key] ? ov.color : '#81776F',
+                  borderColor: overlayFilters[ov.key] ? ov.color : cityTheme.hudBorder,
+                  background: overlayFilters[ov.key] ? (isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(56, 189, 248, 0.08)') : 'transparent',
+                  color: overlayFilters[ov.key] ? ov.color : cityTheme.hudMuted,
                   fontSize: '10.5px',
                   fontWeight: 600,
                   cursor: 'pointer'
@@ -977,7 +1119,7 @@ export const MetropolisCityViewport = ({
               </button>
             ))}
 
-            <div style={{ width: '1px', height: '14px', background: '#D9CFC7', margin: '0 2px' }} />
+            <div style={{ width: '1px', height: '14px', background: cityTheme.hudBorder, margin: '0 2px' }} />
 
             <button
               onClick={() => setForceCutaway(!forceCutaway)}
@@ -989,9 +1131,9 @@ export const MetropolisCityViewport = ({
                 padding: '3px 7px',
                 borderRadius: '5px',
                 border: '1px solid',
-                borderColor: forceCutaway ? '#C09A62' : '#D9CFC7',
-                background: forceCutaway ? 'rgba(192, 154, 98, 0.15)' : 'transparent',
-                color: forceCutaway ? '#C09A62' : '#81776F',
+                borderColor: forceCutaway ? '#C09A62' : cityTheme.hudBorder,
+                background: forceCutaway ? (isDark ? 'rgba(192, 154, 98, 0.18)' : 'rgba(192, 154, 98, 0.15)') : 'transparent',
+                color: forceCutaway ? '#C09A62' : cityTheme.hudMuted,
                 fontSize: '10.5px',
                 fontWeight: 600,
                 cursor: 'pointer'
@@ -1011,7 +1153,7 @@ export const MetropolisCityViewport = ({
           width: '100%',
           height: '100%',
           display: 'block',
-          background: '#F9F8F6'
+          background: cityTheme.bg
         }}
       >
         <defs>
@@ -1022,17 +1164,17 @@ export const MetropolisCityViewport = ({
 
           {/* Drop shadow for buildings */}
           <filter id="metro-shadow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="2" dy="4" stdDeviation="3" floodColor="#39332E" floodOpacity="0.12" />
+            <feDropShadow dx="2" dy="4" stdDeviation="3" floodColor={isDark ? "#000000" : "#39332E"} floodOpacity={isDark ? "0.4" : "0.12"} />
           </filter>
 
           {/* Urban background grid */}
           <pattern id="metro-ground-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <circle cx="20" cy="20" r="0.7" fill="#D9CFC7" opacity="0.6" />
+            <circle cx="20" cy="20" r="0.7" fill={cityTheme.gridDot} opacity="0.6" />
           </pattern>
 
           {/* Hatch pattern for unsupported files */}
           <pattern id="unsupported-hatch" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
-            <line x1="0" y1="0" x2="0" y2="8" stroke="#D9CFC7" strokeWidth="1.2" opacity="0.8" />
+            <line x1="0" y1="0" x2="0" y2="8" stroke={cityTheme.hudBorder} strokeWidth="1.2" opacity="0.8" />
           </pattern>
         </defs>
 
@@ -1044,7 +1186,7 @@ export const MetropolisCityViewport = ({
             y={-1000}
             width={(cityBounds.width || 1200) + 2000}
             height={(cityBounds.height || 900) + 2000}
-            fill="#F9F8F6"
+            fill={cityTheme.bg}
           />
           <rect
             x={-1000}
@@ -1061,8 +1203,8 @@ export const MetropolisCityViewport = ({
             width={cityBounds.width}
             height={cityBounds.height}
             rx={20}
-            fill="#EFE9E3"
-            stroke="#D9CFC7"
+            fill={cityTheme.groundPerimeter}
+            stroke={cityTheme.groundBorder}
             strokeWidth={2}
           />
 
@@ -1077,16 +1219,16 @@ export const MetropolisCityViewport = ({
               handleSelectEntityInternal({ type: 'REPOSITORY', name: cityData?.repositoryName || 'Repository', data: cityData, id: cityData?.repositoryId });
             }}
           >
-            <rect x={0} y={0} width={90} height={70} rx={10} fill="#FFFFFF" stroke="#D9CFC7" strokeWidth={1.5} />
+            <rect x={0} y={0} width={90} height={70} rx={10} fill={cityTheme.orientationFill} stroke={cityTheme.orientationBorder} strokeWidth={1.5} />
             {/* Compass Rose */}
-            <circle cx={45} cy={26} r={14} fill="#EFE9E3" stroke="#587C78" strokeWidth={1.2} />
-            <path d="M 45 14 L 47 24 L 57 26 L 47 28 L 45 38 L 43 28 L 33 26 L 43 24 Z" fill="#587C78" />
-            <text x={45} y={11} fontSize={7} fontWeight="800" fill="#587C78" textAnchor="middle">N</text>
+            <circle cx={45} cy={26} r={14} fill={cityTheme.groundPerimeter} stroke={cityTheme.compassAccent} strokeWidth={1.2} />
+            <path d="M 45 14 L 47 24 L 57 26 L 47 28 L 45 38 L 43 28 L 33 26 L 43 24 Z" fill={cityTheme.compassAccent} />
+            <text x={45} y={11} fontSize={7} fontWeight="800" fill={cityTheme.compassAccent} textAnchor="middle">N</text>
             {/* Orientation Plaque */}
-            <text x={45} y={49} fontFamily="'Inter', sans-serif" fontSize={7.5} fontWeight="700" letterSpacing="0.08em" fill="#39332E" textAnchor="middle">
+            <text x={45} y={49} fontFamily="'Geist', 'Inter', sans-serif" fontSize={7.5} fontWeight="700" letterSpacing="0.08em" fill={cityTheme.orientationText} textAnchor="middle">
               ORIENTATION PLAZA
             </text>
-            <text x={45} y={60} fontFamily="'Inter', sans-serif" fontSize={6.5} fontWeight="600" fill="#81776F" textAnchor="middle">
+            <text x={45} y={60} fontFamily="'Geist', 'Inter', sans-serif" fontSize={6.5} fontWeight="600" fill={cityTheme.hudMuted} textAnchor="middle">
               ALL REQUESTS ENTER HERE
             </text>
           </g>
@@ -1105,7 +1247,7 @@ export const MetropolisCityViewport = ({
                       y1={street.y1}
                       x2={street.x2}
                       y2={street.y2}
-                      stroke={street.surfaceColor || (isAve ? '#D9CFC7' : '#E6DFD7')}
+                      stroke={isDark ? (isAve ? cityTheme.roadAvenue : cityTheme.roadBed) : (street.surfaceColor || (isAve ? '#D9CFC7' : '#E6DFD7'))}
                       strokeWidth={sWidth}
                       strokeLinecap="round"
                     />
@@ -1116,7 +1258,7 @@ export const MetropolisCityViewport = ({
                         y1={street.y1}
                         x2={street.x2}
                         y2={street.y2}
-                        stroke="#C9B59C"
+                        stroke={cityTheme.roadCenterline}
                         strokeWidth={2}
                         strokeDasharray="8 6"
                         opacity={0.9}
@@ -1129,9 +1271,9 @@ export const MetropolisCityViewport = ({
               {/* Intersections & Junction Pads */}
               {(cityData?.intersections || []).map(inter => (
                 <g key={inter.id} transform={`translate(${inter.x}, ${inter.y})`}>
-                  <circle cx={0} cy={0} r={inter.radius || 14} fill="#EFE9E3" stroke="#D9CFC7" strokeWidth={1.5} />
+                  <circle cx={0} cy={0} r={inter.radius || 14} fill={cityTheme.intersection} stroke={cityTheme.intersectionBorder} strokeWidth={1.5} />
                   {/* Traffic Signal indicator */}
-                  <circle cx={0} cy={0} r={3.5} fill="#C9B59C" />
+                  <circle cx={0} cy={0} r={3.5} fill={cityTheme.intersectionSignal} />
                 </g>
               ))}
             </g>
@@ -1163,38 +1305,38 @@ export const MetropolisCityViewport = ({
                   width={d.width}
                   height={d.height}
                   rx={14}
-                  fill="#EFE9E3"
-                  stroke="#D9CFC7"
+                  fill={cityTheme.districtFill}
+                  stroke={cityTheme.districtBorder}
                   strokeWidth={1.5}
                 />
                 {/* Dedicated District Header Plaque (Reserved Area - Never Collides) */}
                 <g transform={`translate(${d.x + 12}, ${d.y + 10})`}>
                   {/* 2-Letter Module Tag */}
-                  <rect x={0} y={0} width={24} height={20} rx={4} fill="#FFFFFF" stroke="#D9CFC7" strokeWidth={1} />
-                  <text x={12} y={14} fontFamily="'Inter', sans-serif" fontSize={10} fontWeight="800" fill="#587C78" textAnchor="middle">
+                  <rect x={0} y={0} width={24} height={20} rx={4} fill={cityTheme.districtHeaderFill} stroke={cityTheme.districtBorder} strokeWidth={1} />
+                  <text x={12} y={14} fontFamily="'Geist', 'Inter', sans-serif" fontSize={10} fontWeight="800" fill={cityTheme.compassAccent} textAnchor="middle">
                     {shortTag}
                   </text>
                   {/* Uppercase District Name with Tooltip Title */}
                   <text
                     x={32}
                     y={15}
-                    fontFamily="'Inter', sans-serif"
+                    fontFamily="'Geist', 'Inter', sans-serif"
                     fontSize={11.5}
                     fontWeight="700"
                     letterSpacing="0.08em"
-                    fill="#39332E"
+                    fill={cityTheme.districtText}
                   >
                     <title>{d.name}</title>
                     {displayDistName.toUpperCase()}
                   </text>
                   {/* File Count Badge */}
-                  <rect x={d.width - 92} y={0} width={44} height={20} rx={10} fill="#FFFFFF" stroke="#D9CFC7" strokeWidth={1} />
-                  <text x={d.width - 70} y={14} fontFamily="'Inter', sans-serif" fontSize={9.5} fontWeight="700" fill="#62574E" textAnchor="middle">
+                  <rect x={d.width - 92} y={0} width={44} height={20} rx={10} fill={cityTheme.districtHeaderFill} stroke={cityTheme.districtBorder} strokeWidth={1} />
+                  <text x={d.width - 70} y={14} fontFamily="'Geist Mono', 'Inter', sans-serif" fontSize={9.5} fontWeight="700" fill={cityTheme.districtSubtext} textAnchor="middle">
                     {d.buildingCount || 0} files
                   </text>
                   {/* Neighbourhood Count Badge */}
-                  <rect x={d.width - 42} y={0} width={28} height={20} rx={10} fill="#FFFFFF" stroke="#D9CFC7" strokeWidth={1} />
-                  <text x={d.width - 28} y={14} fontFamily="'Inter', sans-serif" fontSize={9.5} fontWeight="700" fill="#587C78" textAnchor="middle">
+                  <rect x={d.width - 42} y={0} width={28} height={20} rx={10} fill={cityTheme.districtHeaderFill} stroke={cityTheme.districtBorder} strokeWidth={1} />
+                  <text x={d.width - 28} y={14} fontFamily="'Geist Mono', 'Inter', sans-serif" fontSize={9.5} fontWeight="700" fill={cityTheme.compassAccent} textAnchor="middle">
                     {d.neighbourhoodCount || 1}N
                   </text>
                 </g>
@@ -1224,19 +1366,19 @@ export const MetropolisCityViewport = ({
                   width={blk.width}
                   height={blk.height}
                   rx={8}
-                  fill="#F4EFEA"
-                  stroke="#D9CFC7"
+                  fill={isDark ? '#14141c' : '#F4EFEA'}
+                  stroke={cityTheme.districtBorder}
                   strokeWidth={1.5}
                   strokeDasharray="5 4"
                 />
                 {/* Reserved Neighbourhood Title Header */}
                 <g transform={`translate(${blk.x + 10}, ${blk.y + 8})`}>
                   <text
-                    fontFamily="'Inter', sans-serif"
+                    fontFamily="'Geist', 'Inter', sans-serif"
                     fontSize={9.5}
                     fontWeight="700"
                     letterSpacing="0.06em"
-                    fill="#62574E"
+                    fill={cityTheme.districtSubtext}
                   >
                     <title>{blk.name}</title>
                     🏘️ {displayBlkName.toUpperCase()}

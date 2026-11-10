@@ -1,10 +1,15 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark" data-t="d">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cross-Repo Dependency Impact Mapper — Developer SaaS Platform</title>
+    <title>Plexus — Cross-Repo Dependency Impact Analyzer & CodeCity</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+    <!-- Typography: Geist & Geist Mono (Modern Engineering Fonts) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <!-- D3.js v7 -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -42,9 +47,9 @@
      ==================================================================== -->
 <div id="auth-root" style="display: none; min-height: 100vh; width: 100%;"></div>
 
-<div id="app-loading-screen" style="display: flex; min-height: 100vh; width: 100%; flex-direction: column; align-items: center; justify-content: center; background: #F9F8F6; color: #39332E; font-family: 'Inter', system-ui, sans-serif; position: fixed; top: 0; left: 0; z-index: 99999;">
-    <div style="width: 38px; height: 38px; border: 3px solid #D9CFC7; border-top-color: #7A5C38; border-radius: 50%; animation: auth-spin 0.8s linear infinite;"></div>
-    <span style="font-size: 13px; margin-top: 16px; color: #62574E; font-weight: 500;">Connecting to CodeCity Workspace...</span>
+<div id="app-loading-screen" style="display: flex; min-height: 100vh; width: 100%; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); color: var(--t); font-family: var(--font-sans); position: fixed; top: 0; left: 0; z-index: 99999;">
+    <div style="width: 32px; height: 32px; border: 2.5px solid var(--b2); border-top-color: var(--a); border-radius: 50%; animation: auth-spin 0.8s linear infinite;"></div>
+    <span style="font-size: 13px; margin-top: 14px; color: var(--m); font-weight: 500;">Connecting to Workspace...</span>
     <style>
         @keyframes auth-spin {
             to { transform: rotate(360deg); }
@@ -57,39 +62,36 @@
          Persistent Collapsible Sidebar
          ==================================================================== -->
     <aside class="sidebar" id="app-sidebar">
-        <div>
+        <div style="display: flex; flex-direction: column; min-height: 0; flex: 1;">
             <div class="sidebar-header">
                 <a href="#overview" class="sidebar-brand">
                     <div class="brand-icon-wrapper">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect width="7" height="9" x="3" y="3" rx="1"/>
-                            <rect width="7" height="5" x="14" y="3" rx="1"/>
-                            <rect width="7" height="9" x="14" y="12" rx="1"/>
-                            <rect width="7" height="5" x="3" y="16" rx="1"/>
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 21V7l6-3v17M10 21V10l10 3v8M3 21h18"/>
                         </svg>
                     </div>
                     <div class="brand-text">
-                        <span class="brand-title">Impact Mapper</span>
+                        <span class="brand-title">Plexus</span>
                         <span class="brand-subtitle">Dependency Intelligence</span>
                     </div>
                 </a>
                 <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" title="Toggle Sidebar" aria-label="Toggle Sidebar">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="15 18 9 12 15 6"/>
                     </svg>
                 </button>
             </div>
 
             <nav class="sidebar-nav">
-                <div class="nav-section-title">Ecosystem</div>
+                <div class="nav-section-title">Workspace</div>
                 
                 <a class="nav-item" data-view="overview" data-tooltip="Engineering Overview">
                     <span class="nav-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect width="7" height="9" x="3" y="3" rx="1"/>
-                            <rect width="7" height="5" x="14" y="3" rx="1"/>
-                            <rect width="7" height="9" x="14" y="12" rx="1"/>
-                            <rect width="7" height="5" x="3" y="16" rx="1"/>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="7" height="7" x="3" y="3" rx="1"/>
+                            <rect width="7" height="7" x="14" y="3" rx="1"/>
+                            <rect width="7" height="7" x="14" y="14" rx="1"/>
+                            <rect width="7" height="7" x="3" y="14" rx="1"/>
                         </svg>
                     </span>
                     <span class="nav-label">Overview</span>
@@ -97,9 +99,8 @@
 
                 <a class="nav-item" data-view="repositories" data-tooltip="Repositories Management">
                     <span class="nav-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
-                            <path d="M9 18c-4.51 2-5-2-7-2"/>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9"/>
                         </svg>
                     </span>
                     <span class="nav-label">Repositories</span>
@@ -107,54 +108,39 @@
 
                 <a class="nav-item" data-view="explorer" data-tooltip="Dependency Explorer">
                     <span class="nav-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m7.5 4.27 9 5.15"/>
-                            <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
-                            <path d="m3.3 7 8.7 5 8.7-5"/>
-                            <path d="M12 22V12"/>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8"/>
                         </svg>
                     </span>
-                    <span class="nav-label">Dependency Explorer</span>
+                    <span class="nav-label">Dependencies</span>
                 </a>
 
-                <div class="nav-section-title" style="margin-top: 12px;">Intelligence</div>
+                <div class="nav-section-title">Analysis</div>
 
-                <a class="nav-item" data-view="impact" data-tooltip="Impact Analysis">
+                <a class="nav-item" data-view="impact" data-tooltip="Upgrade Impact Analysis">
                     <span class="nav-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-                            <line x1="12" y1="9" x2="12" y2="13"/>
-                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 3l10 18H2zM12 10v5M12 18h.01"/>
                         </svg>
                     </span>
                     <span class="nav-label">Impact Analysis</span>
                 </a>
 
-                <div class="nav-section-title" style="margin-top: 12px;">Visual Explorer</div>
+                <div class="nav-section-title">Explore</div>
 
                 <a class="nav-item" data-view="codecity" data-tooltip="CodeCity — Interactive 2D Software City">
                     <span class="nav-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect width="16" height="20" x="4" y="2" rx="2" ry="2"/>
-                            <path d="M9 22v-4h6v4"/>
-                            <path d="M8 6h.01"/>
-                            <path d="M16 6h.01"/>
-                            <path d="M12 6h.01"/>
-                            <path d="M12 10h.01"/>
-                            <path d="M12 14h.01"/>
-                            <path d="M16 10h.01"/>
-                            <path d="M16 14h.01"/>
-                            <path d="M8 10h.01"/>
-                            <path d="M8 14h.01"/>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 21V7l6-3v17M10 21V10l10 3v8M3 21h18"/>
                         </svg>
                     </span>
                     <span class="nav-label">CodeCity</span>
-                    <span class="badge" style="margin-left: auto; font-size: 10px; background: rgba(99, 102, 241, 0.2); color: #818cf8; padding: 1px 5px; border-radius: 4px;">2D</span>
+                    <span class="badge">2D</span>
                 </a>
 
                 <a class="nav-item" data-view="architecture" data-tooltip="Repository Architecture Explorer">
                     <span class="nav-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                             <polygon points="12 2 2 7 12 12 22 7 12 2"/>
                             <polyline points="2 17 12 22 22 17"/>
                             <polyline points="2 12 12 17 22 12"/>
@@ -165,10 +151,9 @@
 
                 <a class="nav-item" data-view="dependency-map" data-tooltip="Dependency Ecosystem Explorer">
                     <span class="nav-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
-                            <path d="M6 6h10"/>
-                            <path d="M6 10h10"/>
+                            <path d="M6 6h10M6 10h10"/>
                         </svg>
                     </span>
                     <span class="nav-label">Dependency Map</span>
@@ -176,22 +161,20 @@
 
                 <a class="nav-item" data-view="repository-network" data-tooltip="Repository Relationships Explorer">
                     <span class="nav-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="16" y="16" width="6" height="6" rx="1"/>
                             <rect x="2" y="16" width="6" height="6" rx="1"/>
                             <rect x="9" y="2" width="6" height="6" rx="1"/>
-                            <path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/>
-                            <path d="M12 12V8"/>
+                            <path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3M12 12V8"/>
                         </svg>
                     </span>
                     <span class="nav-label">Repo Network</span>
                 </a>
 
-                <a class="nav-item" data-view="network" data-tooltip="Dependency Network Graph (Legacy)">
+                <a class="nav-item" data-view="network" data-tooltip="Dependency Topology Canvas">
                     <span class="nav-icon">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="3"/>
-                            <path d="M3 12h3m12 0h3m-9-9v3m0 12v3"/>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 5v6M12 11L5 17M12 11l7 6M12 3h.01M5 19h.01M19 19h.01"/>
                         </svg>
                     </span>
                     <span class="nav-label">Topology Canvas</span>
@@ -202,23 +185,29 @@
         <div class="sidebar-footer">
             <a class="nav-item" data-view="settings" data-tooltip="Settings & Environment">
                 <span class="nav-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-                        <circle cx="12" cy="7" r="3"/>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                     </svg>
                 </span>
                 <span class="nav-label">Settings</span>
             </a>
-            <a class="nav-item" id="sidebar-signout-btn" data-tooltip="Sign Out of CodeCity" style="display: none; cursor: pointer;">
-                <span class="nav-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+            <!-- User Account Badge -->
+            <div class="user-account-badge" id="sidebar-user-card" style="display: none;">
+                <div class="user-avatar-circle" id="sidebar-user-avatar">U</div>
+                <div class="user-account-info">
+                    <b id="sidebar-user-email">User</b>
+                    <span id="sidebar-user-sub">Connected</span>
+                </div>
+                <button class="topbar-action-btn" id="sidebar-signout-btn" title="Sign Out" aria-label="Sign out" style="width: 26px; height: 26px; padding: 0;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                         <polyline points="16 17 21 12 16 7"/>
                         <line x1="21" y1="12" x2="9" y2="12"/>
                     </svg>
-                </span>
-                <span class="nav-label">Sign Out</span>
-            </a>
+                </button>
+            </div>
         </div>
     </aside>
 
@@ -229,7 +218,7 @@
         <header class="topbar">
             <div class="topbar-left">
                 <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Open navigation menu">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="3" y1="12" x2="21" y2="12"/>
                         <line x1="3" y1="6" x2="21" y2="6"/>
                         <line x1="3" y1="18" x2="21" y2="18"/>
@@ -244,26 +233,26 @@
             </div>
 
             <div class="topbar-right">
-                <!-- Global Dependency Search -->
-                <div class="global-search-container">
+                <!-- Global Command Palette Search -->
+                <div class="global-search-container" id="global-search-trigger" style="cursor: pointer;">
                     <span class="global-search-icon">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="11" cy="11" r="8"/>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"/>
                         </svg>
                     </span>
-                    <input type="text" class="global-search-input" id="global-search-input" placeholder="Search libraries across repos...">
-                    <kbd class="global-search-kbd">Ctrl+K</kbd>
+                    <input type="text" class="global-search-input" id="global-search-input" placeholder="Search pages, repositories, libraries...">
+                    <kbd class="global-search-kbd">Ctrl K</kbd>
                 </div>
 
                 <!-- Database Status Badge -->
                 <div class="system-status-pill" title="Connected to PostgreSQL database (Neon Serverless)">
-                    <span class="system-status-dot" style="background: #587C78;"></span>
+                    <span class="system-status-dot"></span>
                     <span>Neon PostgreSQL</span>
                 </div>
 
                 <!-- User Account Status -->
-                <div id="topbar-user-pill" style="display: none; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--surface-card);">
+                <div id="topbar-user-pill" style="display: none; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--b2); background: var(--p2);">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
                         <circle cx="12" cy="7" r="4"/>
@@ -272,27 +261,23 @@
                 </div>
 
                 <!-- Sign Out Button -->
-                <button class="topbar-action-btn" id="topbar-signout-btn" title="Sign Out of CodeCity" aria-label="Sign out" style="display: none; gap: 4px; padding: 4px 8px; font-size: 11.5px; font-weight: 600;">
+                <button class="topbar-action-btn" id="topbar-signout-btn" title="Sign Out of CodeCity" aria-label="Sign out" style="display: none;">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                         <polyline points="16 17 21 12 16 7"/>
                         <line x1="21" y1="12" x2="9" y2="12"/>
                     </svg>
-                    <span>Sign Out</span>
                 </button>
 
                 <!-- Refresh Button -->
                 <button class="topbar-action-btn" id="topbar-refresh-btn" title="Refresh Current View" aria-label="Refresh view">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                        <path d="M21 3v5h-5"/>
-                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                        <path d="M3 21v-5h5"/>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 11a8 8 0 0 0-14-4L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4l2-2M20 20v-5h-5"/>
                     </svg>
                 </button>
 
                 <!-- Theme Toggle Button -->
-                <button class="topbar-action-btn" id="topbar-theme-toggle" title="Toggle Theme" aria-label="Toggle theme">
+                <button class="topbar-action-btn" id="topbar-theme-toggle" title="Switch Theme (Light / Dark)" aria-label="Toggle theme">
                     <!-- Icon injected by app.js -->
                 </button>
             </div>
@@ -304,16 +289,16 @@
             <div id="view-repositories" class="page-view"></div>
             <div id="view-explorer" class="page-view"></div>
             <div id="view-impact" class="page-view"></div>
-            <div id="view-codecity" class="page-view" style="padding: 0; height: calc(100vh - 60px);">
+            <div id="view-codecity" class="page-view" style="padding: 0; height: calc(100vh - var(--topbar-height));">
                 <div id="mount-codecity" style="width: 100%; height: 100%;"></div>
             </div>
-            <div id="view-architecture" class="page-view" style="padding: 0; height: calc(100vh - 60px);">
+            <div id="view-architecture" class="page-view" style="padding: 0; height: calc(100vh - var(--topbar-height));">
                 <div id="mount-architecture" style="width: 100%; height: 100%;"></div>
             </div>
-            <div id="view-dependency-map" class="page-view" style="padding: 0; height: calc(100vh - 60px);">
+            <div id="view-dependency-map" class="page-view" style="padding: 0; height: calc(100vh - var(--topbar-height));">
                 <div id="mount-dependency-map" style="width: 100%; height: 100%;"></div>
             </div>
-            <div id="view-repository-network" class="page-view" style="padding: 0; height: calc(100vh - 60px);">
+            <div id="view-repository-network" class="page-view" style="padding: 0; height: calc(100vh - var(--topbar-height));">
                 <div id="mount-repository-network" style="width: 100%; height: 100%;"></div>
             </div>
             <div id="view-network" class="page-view"></div>
@@ -323,6 +308,28 @@
 </div>
 
 <!-- ====================================================================
+     Command Palette Modal (Ctrl + K)
+     ==================================================================== -->
+<div class="pal" id="pal" aria-modal="true" role="dialog">
+    <div class="pal-card">
+        <div class="pal-search-row">
+            <svg class="pal-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input id="pi" class="pal-input" placeholder="Search pages, repositories, actions..." aria-label="Command palette">
+            <kbd class="pal-kbd">ESC</kbd>
+        </div>
+        <ul id="pl" class="pal-list" role="listbox"></ul>
+    </div>
+</div>
+
+<!-- ====================================================================
+     Global Toast Notification Pill
+     ==================================================================== -->
+<div id="toast" role="status"></div>
+
+<!-- ====================================================================
      Global Slide-over Drawer
      ==================================================================== -->
 <div class="drawer-backdrop" id="drawer-backdrop"></div>
@@ -330,7 +337,7 @@
     <div class="drawer-header">
         <div id="drawer-title" style="flex: 1; min-width: 0;"></div>
         <button class="modal-close-btn" id="drawer-close-btn" aria-label="Close drawer">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"/>
                 <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>

@@ -710,58 +710,76 @@
 }
 
 /* --------------------------------------------------------------------------
-   Dark Mode Overrides
+   Dark Mode Overrides (Harmonized with Plexus Design System Tokens)
    -------------------------------------------------------------------------- */
-[data-theme='dark'] .graph-workspace {
-  background: #090d16;
-  color: #f1f5f9;
+[data-theme='dark'] .graph-workspace,
+[data-t='d'] .graph-workspace,
+:root:not([data-theme='light']) .graph-workspace {
+  background: var(--bg, #09090c);
+  color: var(--t, #ececf2);
 }
 
 [data-theme='dark'] .graph-toolbar,
 [data-theme='dark'] .graph-sub-bar,
 [data-theme='dark'] .graph-inspector-panel,
 [data-theme='dark'] .graph-legend-box,
-[data-theme='dark'] .rf-node-base {
-  background: #111827;
-  border-color: #1f2937;
-  color: #f1f5f9;
+[data-theme='dark'] .rf-node-base,
+[data-t='d'] .graph-toolbar,
+[data-t='d'] .graph-sub-bar,
+[data-t='d'] .graph-inspector-panel,
+[data-t='d'] .graph-legend-box,
+[data-t='d'] .rf-node-base {
+  background: var(--p, #0f0f13);
+  border-color: var(--b, #23232c);
+  color: var(--t, #ececf2);
 }
 
 [data-theme='dark'] .graph-select,
 [data-theme='dark'] .graph-input,
-[data-theme='dark'] .graph-btn {
-  background: #1f2937;
-  border-color: #374151;
-  color: #f3f4f6;
+[data-theme='dark'] .graph-btn,
+[data-t='d'] .graph-select,
+[data-t='d'] .graph-input,
+[data-t='d'] .graph-btn {
+  background: var(--p2, #15151b);
+  border-color: var(--b, #23232c);
+  color: var(--t, #ececf2);
 }
 
-[data-theme='dark'] .graph-btn:hover {
-  background: #2d3748;
+[data-theme='dark'] .graph-btn:hover,
+[data-t='d'] .graph-btn:hover {
+  background: var(--p3, #1b1b23);
+  border-color: var(--b2, #30303c);
 }
 
-[data-theme='dark'] .react-flow__background {
-  background: #090d16;
+[data-theme='dark'] .react-flow__background,
+[data-t='d'] .react-flow__background {
+  background: var(--bg, #09090c);
 }
 
-[data-theme='dark'] .react-flow__controls-button {
-  background: #111827 !important;
-  color: #f3f4f6 !important;
-  border-color: #1f2937 !important;
+[data-theme='dark'] .react-flow__controls-button,
+[data-t='d'] .react-flow__controls-button {
+  background: var(--p2, #15151b) !important;
+  color: var(--t, #ececf2) !important;
+  border-color: var(--b, #23232c) !important;
 }
 
-[data-theme='dark'] .react-flow__minimap {
-  background: #111827 !important;
-  border-color: #1f2937 !important;
+[data-theme='dark'] .react-flow__minimap,
+[data-t='d'] .react-flow__minimap {
+  background: var(--p2, #15151b) !important;
+  border-color: var(--b, #23232c) !important;
 }
 
-[data-theme='dark'] .inspector-code-snippet {
-  background: #090d16;
-  border-color: #1f2937;
+[data-theme='dark'] .inspector-code-snippet,
+[data-t='d'] .inspector-code-snippet {
+  background: var(--bg, #09090c);
+  border-color: var(--b, #23232c);
+  color: var(--t, #ececf2);
 }
 
-[data-theme='dark'] .meta-pill {
-  background: #1f2937;
-  border-color: #374151;
-  color: #cbd5e1;
+[data-theme='dark'] .meta-pill,
+[data-t='d'] .meta-pill {
+  background: var(--p2, #15151b);
+  border-color: var(--b, #23232c);
+  color: var(--m, #8b8b9a);
 }
 

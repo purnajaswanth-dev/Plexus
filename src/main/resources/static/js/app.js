@@ -75,6 +75,9 @@ const AuthManager = {
         const userEmail = document.getElementById('topbar-user-email');
         const signoutBtn = document.getElementById('topbar-signout-btn');
         const sidebarSignout = document.getElementById('sidebar-signout-btn');
+        const sidebarUserCard = document.getElementById('sidebar-user-card');
+        const sidebarUserEmail = document.getElementById('sidebar-user-email');
+        const sidebarUserAvatar = document.getElementById('sidebar-user-avatar');
 
         if (loadingEl) loadingEl.style.display = 'none';
         if (authRoot) {
@@ -83,10 +86,14 @@ const AuthManager = {
         }
         if (appShell) appShell.style.display = 'flex';
 
-        if (userEmail) userEmail.innerText = session.user.email || 'User';
+        const displayEmail = session.user.email || 'User';
+        if (userEmail) userEmail.innerText = displayEmail;
         if (userPill) userPill.style.display = 'inline-flex';
         if (signoutBtn) signoutBtn.style.display = 'inline-flex';
         if (sidebarSignout) sidebarSignout.style.display = 'flex';
+        if (sidebarUserCard) sidebarUserCard.style.display = 'flex';
+        if (sidebarUserEmail) sidebarUserEmail.innerText = displayEmail;
+        if (sidebarUserAvatar) sidebarUserAvatar.innerText = displayEmail.charAt(0).toUpperCase();
 
         // Target view: preservedHash -> current hash -> overview
         const targetRoute = this.preservedHash || window.location.hash.replace('#', '') || 'overview';
@@ -112,12 +119,14 @@ const AuthManager = {
         const userPill = document.getElementById('topbar-user-pill');
         const signoutBtn = document.getElementById('topbar-signout-btn');
         const sidebarSignout = document.getElementById('sidebar-signout-btn');
+        const sidebarUserCard = document.getElementById('sidebar-user-card');
 
         if (loadingEl) loadingEl.style.display = 'none';
         if (appShell) appShell.style.display = 'none';
         if (userPill) userPill.style.display = 'none';
         if (signoutBtn) signoutBtn.style.display = 'none';
         if (sidebarSignout) sidebarSignout.style.display = 'none';
+        if (sidebarUserCard) sidebarUserCard.style.display = 'none';
 
         if (authRoot) {
             authRoot.style.display = 'block';
@@ -167,6 +176,118 @@ const AuthManager = {
 };
 
 window.AuthManager = AuthManager;
+
+window.toast = (message) => {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = message;
+    t.classList.add('o');
+    clearTimeout(t._hideTimer);
+    t._hideTimer = setTimeout(() => {
+        t.classList.remove('o');
+    }, 2200);
+};
+
+/**
+ * Command Palette (Ctrl+K / Cmd+K)
+ */
+const PaletteManager = {
+    selectedIdx: 0,
+    list: [],
+
+    getItems() {
+        const items = [
+            { l: 'Go to Overview', f: () => App.navigateTo('overview'), i: 'grid' },
+            { l: 'Go to Repositories', f: () => App.navigateTo('repositories'), i: 'gitBranch' },
+            { l: 'Go to Dependencies', f: () => App.navigateTo('explorer'), i: 'box' },
+            { l: 'Go to Impact Analysis', f: () => App.navigateTo('impact'), i: 'alertTriangle' },
+            { l: 'Go to CodeCity (2D)', f: () => App.navigateTo('codecity'), i: 'city' },
+            { l: 'Go to Architecture Explorer', f: () => App.navigateTo('architecture'), i: 'layers' },
+            { l: 'Go to Dependency Map', f: () => App.navigateTo('dependency-map'), i: 'share' },
+            { l: 'Go to Repo Network', f: () => App.navigateTo('repository-network'), i: 'network' },
+            { l: 'Go to Topology Canvas', f: () => App.navigateTo('network'), i: 'network' },
+            { l: 'Go to Settings', f: () => App.navigateTo('settings'), i: 'settings' },
+            { l: 'Switch Theme (Dark / Light)', f: () => { State.toggleTheme(); App.updateThemeToggleIcon(); }, i: 'sun' },
+            { l: 'Refresh Active View', f: () => {
+                const c = App.views[State.currentView];
+                if (c && typeof c.loadData === 'function') c.loadData();
+                else if (c && typeof c.render === 'function') c.render(document.getElementById(`view-${State.currentView}`));
+                window.toast('View refreshed');
+            }, i: 'refresh' }
+        ];
+
+        if (Array.isArray(State.repositories) && State.repositories.length) {
+            State.repositories.forEach(repo => {
+                const name = repo.repoName || repo.name || `Repo #${repo.id}`;
+                items.push({
+                    l: `Open CodeCity: ${name}`,
+                    f: () => {
+                        State.selectedRepoId = repo.id;
+                        App.navigateTo('codecity');
+                    },
+                    i: 'city'
+                });
+                items.push({
+                    l: `Open Architecture: ${name}`,
+                    f: () => {
+                        State.selectedRepoId = repo.id;
+                        App.navigateTo('architecture');
+                    },
+                    i: 'layers'
+                });
+            });
+        }
+        return items;
+    },
+
+    open() {
+        const pal = document.getElementById('pal');
+        const pi = document.getElementById('pi');
+        if (!pal || !pi) return;
+        pal.classList.add('o');
+        pi.value = '';
+        this.selectedIdx = 0;
+        this.render();
+        setTimeout(() => pi.focus(), 30);
+    },
+
+    close() {
+        const pal = document.getElementById('pal');
+        if (pal) pal.classList.remove('o');
+    },
+
+    render() {
+        const pi = document.getElementById('pi');
+        const pl = document.getElementById('pl');
+        if (!pl) return;
+        const q = (pi ? pi.value : '').toLowerCase().trim();
+        this.list = this.getItems().filter(item => item.l.toLowerCase().includes(q));
+        this.selectedIdx = Math.min(this.selectedIdx, Math.max(0, this.list.length - 1));
+
+        if (!this.list.length) {
+            pl.innerHTML = `<li style="padding: 12px 16px; color: var(--m); cursor: default;">No matching commands or repositories.</li>`;
+            return;
+        }
+
+        pl.innerHTML = this.list.map((item, idx) => {
+            const isSelected = idx === this.selectedIdx;
+            const iconSvg = Icons[item.i] ? Icons[item.i](15) : Icons.search(15);
+            return `<li role="option" aria-selected="${isSelected}" data-idx="${idx}">
+                <span style="display:inline-flex; align-items:center; color: var(--${isSelected ? 'a' : 'm'});">${iconSvg}</span>
+                <span style="flex: 1; font-weight: 500;">${item.l}</span>
+            </li>`;
+        }).join('');
+    },
+
+    execute(idx) {
+        this.close();
+        if (this.list[idx] && typeof this.list[idx].f === 'function') {
+            this.list[idx].f();
+        }
+    }
+};
+
+window.PaletteManager = PaletteManager;
 
 /**
  * Main Application Orchestrator & Router
@@ -342,18 +463,41 @@ const App = {
             };
         }
 
-        // Global Search Input
+        // Global Search / Command Palette Trigger
+        const globalSearchTrigger = document.getElementById('global-search-trigger');
+        if (globalSearchTrigger) {
+            globalSearchTrigger.onclick = (e) => {
+                e.preventDefault();
+                PaletteManager.open();
+            };
+        }
         const globalSearch = document.getElementById('global-search-input');
         if (globalSearch) {
-            globalSearch.onkeydown = (e) => {
-                if (e.key === 'Enter') {
-                    const query = e.target.value.trim();
-                    if (query) {
-                        State.depSearch = query;
-                        this.navigateTo('explorer');
-                        const explorerSearch = document.getElementById('explorer-search-input');
-                        if (explorerSearch) explorerSearch.value = query;
-                    }
+            globalSearch.onfocus = (e) => {
+                e.preventDefault();
+                globalSearch.blur();
+                PaletteManager.open();
+            };
+        }
+
+        // Command Palette events
+        const pi = document.getElementById('pi');
+        if (pi) {
+            pi.oninput = () => {
+                PaletteManager.selectedIdx = 0;
+                PaletteManager.render();
+            };
+        }
+
+        const palModal = document.getElementById('pal');
+        if (palModal) {
+            palModal.onclick = (e) => {
+                if (e.target.id === 'pal') {
+                    PaletteManager.close();
+                }
+                const li = e.target.closest('li[data-idx]');
+                if (li) {
+                    PaletteManager.execute(Number(li.dataset.idx));
                 }
             };
         }
@@ -367,18 +511,48 @@ const App = {
 
         // Keyboard Shortcuts
         window.addEventListener('keydown', (e) => {
-            // Escape key closes modals and drawers
+            const isPalOpen = palModal && palModal.classList.contains('o');
+
+            // Escape key closes palette, modals and drawers
             if (e.key === 'Escape') {
+                if (isPalOpen) {
+                    PaletteManager.close();
+                    return;
+                }
                 Components.Drawer.close();
                 document.querySelectorAll('.modal-backdrop.open').forEach(m => m.classList.remove('open'));
                 document.body.style.overflow = '';
             }
 
-            // Ctrl+K or '/' focuses global search
-            if ((e.ctrlKey && e.key === 'k') || (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA')) {
+            // Command palette keyboard navigation
+            if (isPalOpen) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    PaletteManager.selectedIdx = Math.min(PaletteManager.list.length - 1, PaletteManager.selectedIdx + 1);
+                    PaletteManager.render();
+                    return;
+                }
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    PaletteManager.selectedIdx = Math.max(0, PaletteManager.selectedIdx - 1);
+                    PaletteManager.render();
+                    return;
+                }
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    PaletteManager.execute(PaletteManager.selectedIdx);
+                    return;
+                }
+            }
+
+            // Ctrl+K / Cmd+K opens Command Palette
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
                 e.preventDefault();
-                const searchEl = document.getElementById('global-search-input');
-                if (searchEl) searchEl.focus();
+                if (isPalOpen) {
+                    PaletteManager.close();
+                } else {
+                    PaletteManager.open();
+                }
             }
         });
 

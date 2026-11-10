@@ -1,16 +1,42 @@
 /* ==========================================================================
    CODECITY — 2D SOFTWARE CITY VISUALIZATION & REQUEST JOURNEY STYLES
+   Theme Harmonization with Plexus Design System
    ========================================================================== */
+
+:root {
+  --cc-bg: var(--bg, #09090c);
+  --cc-surface: var(--p, #0f0f13);
+  --cc-surface-2: var(--p2, #15151b);
+  --cc-surface-3: var(--p3, #1b1b23);
+  --cc-border: var(--b, #23232c);
+  --cc-border-2: var(--b2, #30303c);
+  --cc-text: var(--t, #ececf2);
+  --cc-text-muted: var(--m, #8b8b9a);
+  --cc-accent: var(--a, #6d8cff);
+  --cc-cyan: var(--cy, #38bdf8);
+}
+
+[data-theme='light'], [data-t='l'] {
+  --cc-bg: #f4f5f8;
+  --cc-surface: #ffffff;
+  --cc-surface-2: #f4f5f8;
+  --cc-surface-3: #eaedf3;
+  --cc-border: #e3e6ed;
+  --cc-border-2: #cdd2dd;
+  --cc-text: #12141a;
+  --cc-text-muted: #586073;
+  --cc-accent: #3552d6;
+  --cc-cyan: #0278b8;
+}
 
 .codecity-workspace-root {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
-  background: #F9F8F6;
-  color: #39332E;
-  color: #39332E;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: var(--cc-bg);
+  color: var(--cc-text);
+  font-family: var(--f, 'Geist', system-ui, sans-serif);
   overflow: hidden;
   position: relative;
 }
@@ -22,10 +48,79 @@
   justify-content: space-between;
   height: 52px;
   padding: 0 16px;
-  background: #EFE9E3;
-  border-bottom: 1px solid #D9CFC7;
+  background: var(--cc-surface-2) !important;
+  border-bottom: 1px solid var(--cc-border) !important;
   z-index: 30;
   gap: 12px;
+  color: var(--cc-text) !important;
+}
+
+.codecity-left-sidebar,
+.journey-active-sidebar,
+.codecity-right-sidebar {
+  background: var(--cc-surface-2) !important;
+  border-right: 1px solid var(--cc-border) !important;
+  border-left: 1px solid var(--cc-border) !important;
+  color: var(--cc-text) !important;
+}
+
+.left-sidebar-tabs {
+  background: var(--cc-surface) !important;
+  border-bottom: 1px solid var(--cc-border) !important;
+}
+
+.left-tab-btn {
+  color: var(--cc-text-muted) !important;
+}
+
+.left-tab-btn.active {
+  color: var(--cc-text) !important;
+  border-bottom-color: var(--cc-accent) !important;
+  background: var(--cc-surface-2) !important;
+}
+
+.btn-back-dir,
+.repo-picker-select,
+.city-global-search-input,
+.action-icon-btn,
+.zoom-toggle-group {
+  background: var(--cc-surface) !important;
+  border: 1px solid var(--cc-border-2) !important;
+  color: var(--cc-text) !important;
+}
+
+.search-dropdown-menu,
+.road-legend-popover,
+.component-inspector-drawer,
+.drawer-root {
+  background: var(--cc-surface) !important;
+  border: 1px solid var(--cc-border-2) !important;
+  color: var(--cc-text) !important;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4) !important;
+}
+
+.search-result-item {
+  border-bottom: 1px solid var(--cc-border) !important;
+}
+
+.search-result-item:hover {
+  background: var(--cc-surface-3) !important;
+}
+
+.result-name,
+.legend-row {
+  color: var(--cc-text) !important;
+}
+
+.legend-header {
+  border-bottom: 1px solid var(--cc-border) !important;
+}
+
+.codecity-center-canvas {
+  flex: 1;
+  position: relative;
+  height: 100%;
+  background: var(--cc-bg) !important;
 }
 
 .btn-back-dir {

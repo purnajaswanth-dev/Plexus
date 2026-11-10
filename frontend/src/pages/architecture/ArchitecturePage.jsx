@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -16,6 +16,7 @@ import {
   Search,
   Filter,
   Maximize2,
+  Minimize2,
   GitCommit,
   Clock,
   Box
@@ -43,9 +44,46 @@ export const ArchitecturePage = ({ initialRepoId, onNavigateToArchitecture }) =>
 
   const [level, setLevel] = useState(3);
   const [layoutMode, setLayoutMode] = useState('elk-down'); // 'elk-down', 'elk-right', 'force', 'radial', 'tree'
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNode, setSelectedNode] = useState(null);
   const [collapsedNodes, setCollapsedNodes] = useState(new Set());
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const workspaceRef = useRef(null);
+
+  const [isDark, setIsDark] = useState(() => {
+    return document.documentElement.getAttribute('data-theme') !== 'light' &&
+           document.documentElement.getAttribute('data-t') !== 'l';
+  });
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const isL = document.documentElement.getAttribute('data-theme') === 'light' ||
+                  document.documentElement.getAttribute('data-t') === 'l';
+      setIsDark(!isL);
+    };
+    window.addEventListener('plexus-theme-changed', handleThemeChange);
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-t'] });
+    return () => {
+      window.removeEventListener('plexus-theme-changed', handleThemeChange);
+      observer.disconnect();
+    };
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      workspaceRef.current?.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -138,6 +176,20 @@ export const ArchitecturePage = ({ initialRepoId, onNavigateToArchitecture }) =>
     let rawNodes = archData.nodes || [];
     let rawEdges = archData.edges || [];
 
+    // Filter by Category
+    if (categoryFilter !== 'ALL') {
+      rawNodes = rawNodes.filter(n => {
+        const type = (n.nodeType || '').toUpperCase();
+        if (categoryFilter === 'CONTROLLER') return type.includes('CONTROLLER');
+        if (categoryFilter === 'SERVICE') return type.includes('SERVICE');
+        if (categoryFilter === 'REPOSITORY') return type.includes('REPOSITORY') || type.includes('DAO');
+        if (categoryFilter === 'ENTITY') return type.includes('ENTITY') || type.includes('MODEL') || type.includes('DTO');
+        if (categoryFilter === 'ENDPOINT') return type.includes('ENDPOINT') || type.includes('API') || type.includes('METHOD');
+        if (categoryFilter === 'PACKAGE') return type.includes('PACKAGE') || type.includes('MODULE') || type.includes('DIRECTORY');
+        return true;
+      });
+    }
+
     // Filter by search query if any
     const query = searchQuery.toLowerCase().trim();
     const matchingNodeKeys = new Set();
@@ -175,10 +227,24 @@ export const ArchitecturePage = ({ initialRepoId, onNavigateToArchitecture }) =>
     const visibleRawNodes = rawNodes.filter(n => !hiddenNodeKeys.has(n.nodeKey));
     const visibleNodeKeySet = new Set(visibleRawNodes.map(n => n.nodeKey));
 
+    // Selection & neighbor highlighting
+    const selectedNodeKey = selectedNode ? (selectedNode.id || selectedNode.nodeKey) : null;
+    const connectedNodeKeys = new Set();
+    if (selectedNodeKey) {
+      connectedNodeKeys.add(selectedNodeKey);
+      rawEdges.forEach(e => {
+        const src = e.sourceNodeKey || (typeof e.source === 'object' ? e.source.nodeKey : e.source);
+        const tgt = e.targetNodeKey || (typeof e.target === 'object' ? e.target.nodeKey : e.target);
+        if (src === selectedNodeKey) connectedNodeKeys.add(tgt);
+        if (tgt === selectedNodeKey) connectedNodeKeys.add(src);
+      });
+    }
+
     const flowNodes = visibleRawNodes.map(n => {
       const children = childMap.get(n.nodeKey) || [];
       const isExpanded = !collapsedNodes.has(n.nodeKey);
       const isMatch = query ? matchingNodeKeys.has(n.nodeKey) : true;
+      const isDimmed = selectedNodeKey && !connectedNodeKeys.has(n.nodeKey);
 
       return {
         id: n.nodeKey,
@@ -188,7 +254,8 @@ export const ArchitecturePage = ({ initialRepoId, onNavigateToArchitecture }) =>
           childCount: children.length,
           isExpanded,
           onToggleExpand: children.length > 0 ? toggleExpand : null,
-          isMatch
+          isMatch,
+          isDimmed
         },
         position: { x: 0, y: 0 }
       };
@@ -205,21 +272,38 @@ export const ArchitecturePage = ({ initialRepoId, onNavigateToArchitecture }) =>
         const tgt = e.targetNodeKey || (typeof e.target === 'object' ? e.target.nodeKey : e.target);
         const rel = e.relationshipType || 'CONTAINS';
 
+        const isHighlighted = selectedNodeKey && (src === selectedNodeKey || tgt === selectedNodeKey);
+        const isDimmed = selectedNodeKey && !isHighlighted;
+        const defaultColor = rel === 'PERSISTS_TO'
+          ? (isDark ? '#34d399' : '#0b8f60')
+          : rel === 'EXPOSES'
+          ? (isDark ? '#38bdf8' : '#0278b8')
+          : rel === 'CALLS'
+          ? (isDark ? '#6d8cff' : '#4f46e5')
+          : (isDark ? '#5d5d6b' : '#94a3b8');
+
+        const strokeColor = isHighlighted
+          ? (isDark ? '#6d8cff' : '#3552d6')
+          : isDimmed
+          ? (isDark ? '#23232c' : '#e2e8f0')
+          : defaultColor;
+
         return {
           id: `e-${e.id || `${src}-${tgt}`}`,
           source: src,
           target: tgt,
-          animated: rel === 'CALLS' || rel === 'EXPOSES',
+          animated: isHighlighted || rel === 'CALLS' || rel === 'EXPOSES',
           style: {
-            stroke: rel === 'PERSISTS_TO' ? '#8D916B' : rel === 'EXPOSES' ? '#587C78' : rel === 'CALLS' ? '#71869B' : '#81776F',
-            strokeWidth: 1.5,
+            stroke: strokeColor,
+            strokeWidth: isHighlighted ? 2.5 : 1.5,
+            opacity: isDimmed ? 0.15 : 0.85,
             strokeDasharray: rel === 'IMPORTS' ? '4,4' : undefined
           },
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            width: 16,
-            height: 16,
-            color: rel === 'PERSISTS_TO' ? '#8D916B' : rel === 'EXPOSES' ? '#587C78' : '#81776F'
+            width: isHighlighted ? 18 : 15,
+            height: isHighlighted ? 18 : 15,
+            color: strokeColor
           },
           data: e
         };
@@ -245,7 +329,7 @@ export const ArchitecturePage = ({ initialRepoId, onNavigateToArchitecture }) =>
     };
 
     runLayout();
-  }, [archData, layoutMode, searchQuery, collapsedNodes, toggleExpand, setNodes, setEdges]);
+  }, [archData, layoutMode, categoryFilter, searchQuery, collapsedNodes, toggleExpand, selectedNode, isDark, setNodes, setEdges]);
 
   const onNodeClick = (_, node) => {
     setSelectedNode(node);
@@ -263,7 +347,7 @@ export const ArchitecturePage = ({ initialRepoId, onNavigateToArchitecture }) =>
   };
 
   return (
-    <div className="graph-workspace">
+    <div className="graph-workspace" ref={workspaceRef}>
       {/* Top Toolbar */}
       <div className="graph-toolbar">
         <div className="graph-toolbar-group">
@@ -327,6 +411,22 @@ export const ArchitecturePage = ({ initialRepoId, onNavigateToArchitecture }) =>
             <option value="radial">Radial Concentric</option>
             <option value="tree">Compact Tree</option>
           </select>
+
+          {/* Category Filter */}
+          <select
+            className="graph-select"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            title="Filter by Architectural Category"
+          >
+            <option value="ALL">All Categories</option>
+            <option value="CONTROLLER">Controllers / APIs</option>
+            <option value="SERVICE">Services</option>
+            <option value="REPOSITORY">Repositories / DAOs</option>
+            <option value="ENTITY">Entities / Models</option>
+            <option value="ENDPOINT">Endpoints / Methods</option>
+            <option value="PACKAGE">Packages / Modules</option>
+          </select>
         </div>
 
         <div className="graph-toolbar-group">
@@ -351,6 +451,15 @@ export const ArchitecturePage = ({ initialRepoId, onNavigateToArchitecture }) =>
           >
             <RefreshCw size={13} className={reindexing ? 'spin-icon' : ''} />
             <span>{reindexing ? 'Analyzing AST...' : 'Re-index'}</span>
+          </button>
+
+          {/* Fullscreen Toggle */}
+          <button
+            className="graph-btn"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+          >
+            {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
           </button>
         </div>
       </div>
@@ -425,20 +534,19 @@ export const ArchitecturePage = ({ initialRepoId, onNavigateToArchitecture }) =>
               minZoom={0.15}
               maxZoom={3}
             >
-              <Background color="#D9CFC7" gap={18} size={1} />
+              <Background color={isDark ? '#23232c' : '#d3d8e2'} gap={18} size={1} />
               <Controls showInteractive={false} />
               <MiniMap
                 nodeColor={(node) => {
                   const t = (node.data?.nodeType || '').toUpperCase();
-                  if (t === 'REPOSITORY') return '#8D916B';
-                  if (t === 'CONTROLLER') return '#587C78';
-                  if (t === 'SERVICE') return '#71869B';
-                  if (t === 'ENTITY') return '#9EA37E';
-                  if (t === 'API_ENDPOINT') return '#587C78';
-                  return '#81776F';
+                  if (t.includes('CONTROLLER')) return isDark ? '#38bdf8' : '#0278b8';
+                  if (t.includes('SERVICE')) return isDark ? '#6d8cff' : '#3552d6';
+                  if (t.includes('REPOSITORY') || t.includes('DAO')) return isDark ? '#34d399' : '#0b8f60';
+                  if (t.includes('ENTITY') || t.includes('MODEL')) return isDark ? '#f5b942' : '#a86a00';
+                  return isDark ? '#8b8b9a' : '#64748b';
                 }}
                 nodeStrokeWidth={2}
-                maskColor="rgba(0, 0, 0, 0.05)"
+                maskColor={isDark ? 'rgba(0, 0, 0, 0.45)' : 'rgba(0, 0, 0, 0.05)'}
               />
             </ReactFlow>
 
