@@ -651,8 +651,10 @@ const CodeCityWorkspaceInner = ({
         </button>
 
         {/* Brand Title */}
-        <div style={{ fontWeight: 700, fontSize: '16px', letterSpacing: '-.01em', color: 'var(--cc-text, #ececf2)' }}>
-          CodeCity
+        <div style={{ fontWeight: 700, fontSize: '15px', letterSpacing: '-.01em', color: 'var(--cc-text, #ececf2)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>CodeCity</span>
+          <span style={{ color: 'var(--cc-border, #23232c)' }}>/</span>
+          <span style={{ fontSize: '12px', color: 'var(--cc-text-muted, #8b8b9a)', fontWeight: 500 }}>Repository:</span>
         </div>
 
         {/* Repository Switcher & Provenance Badges */}
@@ -664,13 +666,14 @@ const CodeCityWorkspaceInner = ({
               background: 'var(--cc-surface, #0f0f13)',
               border: '1px solid var(--cc-border, #23232c)',
               borderRadius: '6px',
-              padding: '6px 10px',
+              padding: '6px 12px',
               color: 'var(--cc-text, #ececf2)',
-              fontSize: '12.5px',
+              fontSize: '13px',
               fontWeight: 600,
               cursor: 'pointer',
               outline: 'none'
             }}
+            title="Active Repository City"
           >
             {repositories.map(r => (
               <option key={r.id} value={r.id} style={{ background: 'var(--cc-surface, #0f0f13)', color: 'var(--cc-text, #ececf2)' }}>

@@ -211,7 +211,7 @@ export const EcosystemPage = ({
       const isHighlighted = selectedNodeId && (src === selectedNodeId || tgt === selectedNodeId);
       const isDimmed = selectedNodeId && !isHighlighted;
       const isNpm = (e.packageType || '').toUpperCase() === 'NPM';
-      const defaultColor = isDark ? (isNpm ? '#10b981' : '#38bdf8') : (isNpm ? '#0b8f60' : '#2563eb');
+      const defaultColor = isDark ? (isNpm ? '#34d399' : '#38bdf8') : (isNpm ? '#0b8f60' : '#2563eb');
       const edgeStroke = isHighlighted ? (isDark ? '#6d8cff' : '#3552d6') : isDimmed ? (isDark ? '#23232c' : '#e2e8f0') : defaultColor;
 
       return {
@@ -221,14 +221,14 @@ export const EcosystemPage = ({
         animated: isHighlighted || e.isDev,
         style: {
           stroke: edgeStroke,
-          strokeWidth: isHighlighted ? 2.5 : 1.5,
-          opacity: isDimmed ? 0.15 : 0.85,
+          strokeWidth: isHighlighted ? 2.5 : 1.2,
+          opacity: isHighlighted ? 0.95 : isDimmed ? 0.05 : 0.22,
           strokeDasharray: e.isDev ? '4,4' : undefined
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          width: isHighlighted ? 18 : 14,
-          height: isHighlighted ? 18 : 14,
+          width: isHighlighted ? 18 : 13,
+          height: isHighlighted ? 18 : 13,
           color: edgeStroke
         },
         data: {

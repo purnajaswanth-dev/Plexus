@@ -194,10 +194,11 @@ export const RelationshipsPage = ({ onNavigateToArchitecture }) => {
         id: e.id || `e-${src}-${tgt}-${idx}`,
         source: src,
         target: tgt,
+        animated: isHighlighted,
         style: {
           stroke: edgeStroke,
           strokeWidth: Math.max(1.8, Math.min(6, Math.sqrt(weight) * 1.8)),
-          opacity: isDimmed ? 0.15 : 0.85
+          opacity: isHighlighted ? 0.95 : isDimmed ? 0.08 : 0.55
         },
         data: {
           ...e,

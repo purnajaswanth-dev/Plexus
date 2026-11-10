@@ -715,12 +715,12 @@ export const MetropolisCityViewport = ({
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              background: 'rgba(239, 233, 227, 0.96)',
+              background: cityTheme.hudBg,
               backdropFilter: 'blur(10px)',
-              border: '1px solid #D9CFC7',
+              border: `1px solid ${cityTheme.hudBorder}`,
               borderRadius: '8px',
               padding: '6px 14px',
-              boxShadow: '0 4px 16px rgba(57, 51, 46, 0.08)',
+              boxShadow: isDark ? '0 4px 16px rgba(0, 0, 0, 0.4)' : '0 4px 16px rgba(18, 20, 26, 0.06)',
               pointerEvents: 'auto',
               fontSize: '12px'
             }}
@@ -730,63 +730,74 @@ export const MetropolisCityViewport = ({
                 fitView();
                 handleSelectEntityInternal({ type: 'REPOSITORY', name: cityData?.repositoryName || 'Repository', data: cityData, id: cityData?.repositoryId });
               }}
-              style={{ background: 'none', border: 'none', color: '#587C78', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: isDark ? 'var(--cc-cyan, #38bdf8)' : 'var(--a, #3552d6)',
+                fontWeight: 700,
+                cursor: 'pointer',
+                padding: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
               title={`Entire repository: ${cityData?.repositoryName || 'Metropolis'}`}
             >
-              🌆 {truncate(cityData?.repositoryName || 'Metropolis', 22)}
+              <span>🌆</span>
+              <span>{cityData?.repositoryName || 'Metropolis'}</span>
             </button>
             {currentDistrict && (
               <>
-                <ChevronRight size={13} style={{ color: '#81776F' }} />
+                <ChevronRight size={13} style={{ color: cityTheme.hudMuted }} />
                 <button
                   onClick={() => {
                     setSelectedDistrictFilter(currentDistrict.id);
                     flyTo(currentDistrict.x + currentDistrict.width / 2, currentDistrict.y + currentDistrict.height / 2, 0.85);
                     handleSelectEntityInternal({ type: 'DISTRICT', name: currentDistrict.name, data: currentDistrict, id: currentDistrict.id });
                   }}
-                  style={{ background: 'none', border: 'none', color: '#39332E', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                  style={{ background: 'none', border: 'none', color: cityTheme.hudText, fontWeight: 600, cursor: 'pointer', padding: 0 }}
                   title={`District: ${currentDistrict.name}`}
                 >
-                  📍 {truncate(currentDistrict.name, 18)}
+                  📍 {truncate(currentDistrict.name, 22)}
                 </button>
               </>
             )}
             {currentBlock && (
               <>
-                <ChevronRight size={13} style={{ color: '#81776F' }} />
+                <ChevronRight size={13} style={{ color: cityTheme.hudMuted }} />
                 <button
                   onClick={() => {
                     flyTo(currentBlock.x + currentBlock.width / 2, currentBlock.y + currentBlock.height / 2, 1.2);
                     handleSelectEntityInternal({ type: 'BLOCK', name: currentBlock.name, data: currentBlock, id: currentBlock.id });
                   }}
-                  style={{ background: 'none', border: 'none', color: '#62574E', fontWeight: 500, cursor: 'pointer', padding: 0 }}
+                  style={{ background: 'none', border: 'none', color: cityTheme.hudMuted, fontWeight: 500, cursor: 'pointer', padding: 0 }}
                   title={`Neighbourhood: ${currentBlock.name}`}
                 >
-                  🏘️ {truncate(currentBlock.name, 18)}
+                  🏘️ {truncate(currentBlock.name, 20)}
                 </button>
               </>
             )}
             {currentActiveBuilding && (
               <>
-                <ChevronRight size={13} style={{ color: '#81776F' }} />
+                <ChevronRight size={13} style={{ color: cityTheme.hudMuted }} />
                 <button
                   onClick={() => {
                     onSelectBuilding(currentActiveBuilding);
                     flyTo(currentActiveBuilding.x + currentActiveBuilding.width / 2, currentActiveBuilding.y + currentActiveBuilding.height / 2, 1.6);
                     handleSelectEntityInternal({ type: 'BUILDING', name: currentActiveBuilding.name, data: currentActiveBuilding, id: currentActiveBuilding.id });
                   }}
-                  style={{ background: 'none', border: 'none', color: '#C09A62', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                  style={{ background: 'none', border: 'none', color: isDark ? 'var(--wa, #f5b942)' : '#a86a00', fontWeight: 600, cursor: 'pointer', padding: 0 }}
                   title={`Building: ${currentActiveBuilding.fileName || currentActiveBuilding.name}`}
                 >
-                  🏢 {truncate(currentActiveBuilding.fileName || currentActiveBuilding.name, 20)}
+                  🏢 {truncate(currentActiveBuilding.fileName || currentActiveBuilding.name, 22)}
                 </button>
               </>
             )}
             {selectedEntity && (
               <>
-                <ChevronRight size={13} style={{ color: '#81776F' }} />
-                <span style={{ color: '#587C78', fontWeight: 600 }}>
-                  🔍 {truncate(selectedEntity.name || selectedEntity.type, 16)}
+                <ChevronRight size={13} style={{ color: cityTheme.hudMuted }} />
+                <span style={{ color: isDark ? 'var(--cc-cyan, #38bdf8)' : 'var(--cy, #0278b8)', fontWeight: 600 }}>
+                  🔍 {truncate(selectedEntity.name || selectedEntity.type, 18)}
                 </span>
               </>
             )}

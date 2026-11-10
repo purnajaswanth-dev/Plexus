@@ -783,3 +783,111 @@
   color: var(--m, #8b8b9a);
 }
 
+/* Architecture & Component Nodes in Dark Mode */
+[data-theme='dark'] .rf-node-controller,
+[data-t='d'] .rf-node-controller {
+  border-color: var(--cy, #38bdf8);
+}
+[data-theme='dark'] .rf-node-controller .rf-node-icon,
+[data-t='d'] .rf-node-controller .rf-node-icon {
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--cy, #38bdf8);
+}
+[data-theme='dark'] .rf-node-controller .rf-node-type-badge,
+[data-t='d'] .rf-node-controller .rf-node-type-badge {
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--cy, #38bdf8);
+}
+
+[data-theme='dark'] .rf-node-service,
+[data-t='d'] .rf-node-service {
+  border-color: var(--a, #6d8cff);
+}
+[data-theme='dark'] .rf-node-service .rf-node-icon,
+[data-t='d'] .rf-node-service .rf-node-icon {
+  background: rgba(109, 140, 255, 0.15);
+  color: var(--a, #6d8cff);
+}
+[data-theme='dark'] .rf-node-service .rf-node-type-badge,
+[data-t='d'] .rf-node-service .rf-node-type-badge {
+  background: rgba(109, 140, 255, 0.15);
+  color: var(--a, #6d8cff);
+}
+
+[data-theme='dark'] .rf-node-repo-interface,
+[data-t='d'] .rf-node-repo-interface,
+[data-theme='dark'] .rf-node-repo,
+[data-t='d'] .rf-node-repo {
+  border-color: var(--ok, #34d399);
+}
+[data-theme='dark'] .rf-node-repo-interface .rf-node-icon,
+[data-t='d'] .rf-node-repo-interface .rf-node-icon,
+[data-theme='dark'] .rf-node-repo .rf-node-icon,
+[data-t='d'] .rf-node-repo .rf-node-icon {
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--ok, #34d399);
+}
+[data-theme='dark'] .rf-node-repo-interface .rf-node-type-badge,
+[data-t='d'] .rf-node-repo-interface .rf-node-type-badge,
+[data-theme='dark'] .rf-node-repo .rf-node-type-badge,
+[data-t='d'] .rf-node-repo .rf-node-type-badge {
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--ok, #34d399);
+}
+
+[data-theme='dark'] .rf-node-entity,
+[data-t='d'] .rf-node-entity {
+  border-color: var(--wa, #f5b942);
+}
+[data-theme='dark'] .rf-node-entity .rf-node-icon,
+[data-t='d'] .rf-node-entity .rf-node-icon {
+  background: rgba(245, 185, 66, 0.15);
+  color: var(--wa, #f5b942);
+}
+[data-theme='dark'] .rf-node-entity .rf-node-type-badge,
+[data-t='d'] .rf-node-entity .rf-node-type-badge {
+  background: rgba(245, 185, 66, 0.15);
+  color: var(--wa, #f5b942);
+}
+
+[data-theme='dark'] .rf-node-endpoint,
+[data-t='d'] .rf-node-endpoint {
+  border-color: var(--cy, #38bdf8);
+}
+[data-theme='dark'] .rf-node-endpoint .rf-node-icon,
+[data-t='d'] .rf-node-endpoint .rf-node-icon {
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--cy, #38bdf8);
+}
+[data-theme='dark'] .rf-node-endpoint .rf-node-type-badge,
+[data-t='d'] .rf-node-endpoint .rf-node-type-badge {
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--cy, #38bdf8);
+}
+
+[data-theme='dark'] .rf-node-external,
+[data-t='d'] .rf-node-external {
+  border-color: var(--er, #f26d6d);
+}
+[data-theme='dark'] .rf-node-external .rf-node-icon,
+[data-t='d'] .rf-node-external .rf-node-icon {
+  background: rgba(242, 109, 109, 0.15);
+  color: var(--er, #f26d6d);
+}
+[data-theme='dark'] .rf-node-external .rf-node-type-badge,
+[data-t='d'] .rf-node-external .rf-node-type-badge {
+  background: rgba(242, 109, 109, 0.15);
+  color: var(--er, #f26d6d);
+}
+
+[data-theme='dark'] .rf-node-dep.divergent,
+[data-t='d'] .rf-node-dep.divergent {
+  border-color: var(--wa, #f5b942);
+  box-shadow: 0 0 0 1px var(--wa, #f5b942);
+}
+[data-theme='dark'] .rf-node-dep.divergent .rf-node-icon,
+[data-t='d'] .rf-node-dep.divergent .rf-node-icon {
+  background: rgba(245, 185, 66, 0.15);
+  color: var(--wa, #f5b942);
+}
+

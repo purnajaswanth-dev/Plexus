@@ -5,28 +5,28 @@ export const GraphLegend = ({ mode = 'architecture' }) => {
 
   if (mode === 'architecture') {
     items = [
-      { label: 'Repository', color: '#C9B59C' },
-      { label: 'Package / Module', color: '#71869B' },
-      { label: 'Controller', color: '#587C78' },
-      { label: 'Service', color: '#71869B' },
-      { label: 'Repository / DAO', color: '#8D916B' },
-      { label: 'Entity / Model', color: '#9EA37E' },
-      { label: 'API Endpoint', color: '#587C78' },
-      { label: 'External Lib', color: '#B77C61' }
+      { label: 'Repository', color: 'var(--a, #6d8cff)' },
+      { label: 'Package / Module', color: 'var(--m, #8b8b9a)' },
+      { label: 'Controller', color: 'var(--cy, #38bdf8)' },
+      { label: 'Service', color: 'var(--a, #6d8cff)' },
+      { label: 'Repository / DAO', color: 'var(--ok, #34d399)' },
+      { label: 'Entity / Model', color: 'var(--wa, #f5b942)' },
+      { label: 'API Endpoint', color: 'var(--cy, #38bdf8)' },
+      { label: 'External Lib', color: 'var(--er, #f26d6d)' }
     ];
   } else if (mode === 'ecosystem') {
     items = [
-      { label: 'Repository', color: '#C9B59C' },
-      { label: 'Maven Package', color: '#71869B' },
-      { label: 'NPM Package', color: '#587C78' },
-      { label: 'Divergent Version', color: '#B7655D' }
+      { label: 'Repository', color: 'var(--a, #6d8cff)' },
+      { label: 'Maven Package', color: 'var(--cy, #38bdf8)' },
+      { label: 'NPM Package', color: 'var(--ok, #34d399)' },
+      { label: 'Divergent Version', color: 'var(--wa, #f5b942)' }
     ];
   } else if (mode === 'relationships') {
     items = [
-      { label: 'Repository', color: '#C9B59C' },
-      { label: 'High Similarity (>50%)', color: '#64836B' },
-      { label: 'Medium Similarity (20-50%)', color: '#587C78' },
-      { label: 'Low Similarity (<20%)', color: '#81776F' }
+      { label: 'Repository', color: 'var(--a, #6d8cff)' },
+      { label: 'High Similarity (>50%)', color: 'var(--ok, #34d399)' },
+      { label: 'Medium Similarity (20-50%)', color: 'var(--cy, #38bdf8)' },
+      { label: 'Low Similarity (<20%)', color: 'var(--m, #8b8b9a)' }
     ];
   }
 

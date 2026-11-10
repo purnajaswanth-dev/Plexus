@@ -18,6 +18,7 @@ import {
   Maximize2,
   Minimize2,
   GitCommit,
+  GitBranch,
   Clock,
   Box
 } from 'lucide-react';
@@ -468,7 +469,10 @@ export const ArchitecturePage = ({ initialRepoId, onNavigateToArchitecture }) =>
       {selectedRepo && archData && (
         <div className="graph-sub-bar">
           <div className="graph-meta-pills">
-            <span className="meta-pill brand">
+            <span className="meta-pill brand" style={{ fontWeight: 600 }}>
+              <GitBranch size={12} /> {selectedRepo.repoName}
+            </span>
+            <span className="meta-pill">
               <Box size={12} /> {selectedRepo.dependencyFileType || 'GENERIC'}
             </span>
             <span className={`meta-pill ${archData.status === 'ANALYZED' ? 'success' : 'warning'}`}>

@@ -523,7 +523,7 @@ const NetworkPage = {
                 node.style('opacity', n => connectedIds.has(n.id) ? 1 : 0.12);
                 node.selectAll('text').style('display', function(n) {
                     if (connectedIds.has(n.id)) return 'inline';
-                    return (n.nodeCategory === 'REPOSITORY' || n.isDivergent || (n.repoCount && n.repoCount > 1)) ? 'inline' : 'none';
+                    return (n.nodeCategory === 'REPOSITORY' || (n.repoCount && n.repoCount > 1)) ? 'inline' : 'none';
                 });
                 link.style('stroke-opacity', l => {
                     const s = typeof l.source === 'object' ? l.source.id : l.source;
@@ -535,7 +535,7 @@ const NetworkPage = {
                 this.hideTooltip();
                 node.style('opacity', 1);
                 node.selectAll('text').style('display', function(n) {
-                    return (n.nodeCategory === 'REPOSITORY' || n.isDivergent || (n.repoCount && n.repoCount > 1)) ? 'inline' : 'none';
+                    return (n.nodeCategory === 'REPOSITORY' || (n.repoCount && n.repoCount > 1)) ? 'inline' : 'none';
                 });
                 link.style('stroke-opacity', 0.45);
             });
@@ -578,7 +578,7 @@ const NetworkPage = {
         node.filter(d => d.nodeCategory === 'DEPENDENCY')
             .append('circle')
             .attr('class', d => `d3-node ${d.ecosystem === 'NPM' ? 'bipartite-dep-npm' : 'bipartite-dep-maven'} ${d.isDivergent ? 'node-divergent-glow' : ''}`)
-            .attr('r', d => 8 + Math.min(10, (d.repoCount || 1) * 2))
+            .attr('r', d => (d.repoCount && d.repoCount > 1 ? 8 + Math.min(8, (d.repoCount - 1) * 3) : 5.5))
             .on('mouseover', (event, d) => {
                 const versionsText = d.versions ? d.versions.join(', ') : 'none';
                 this.showTooltip(event, `
@@ -598,9 +598,9 @@ const NetworkPage = {
         node.filter(d => d.nodeCategory === 'DEPENDENCY')
             .append('text')
             .attr('class', 'd3-node-label')
-            .attr('dx', d => 12 + Math.min(10, (d.repoCount || 1) * 2))
+            .attr('dx', d => (d.repoCount && d.repoCount > 1 ? 14 : 9))
             .attr('dy', 4)
-            .style('display', d => (d.isDivergent || (d.repoCount && d.repoCount > 1)) ? 'inline' : 'none')
+            .style('display', d => (d.repoCount && d.repoCount > 1) ? 'inline' : 'none')
             .text(d => {
                 const name = d.artifactId || d.label || '';
                 return name.length > 20 ? name.substring(0, 19) + '…' : name;
@@ -991,19 +991,19 @@ const NetworkPage = {
             legend.innerHTML = `
                 <div style="font-weight: 600; font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px;">Ecosystem Bipartite Topology</div>
                 <div class="legend-item">
-                    <span style="display: inline-block; width: 14px; height: 10px; border-radius: 2px; background-color: #4f46e5;"></span>
+                    <span style="display: inline-block; width: 14px; height: 10px; border-radius: 2px; background-color: var(--a, #6d8cff);"></span>
                     <span>Repository Node</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-dot" style="background-color: #2563eb;"></span>
+                    <span class="legend-dot" style="background-color: var(--cy, #38bdf8);"></span>
                     <span>Maven Library (Blue)</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-dot" style="background-color: #16a34a;"></span>
+                    <span class="legend-dot" style="background-color: var(--ok, #34d399);"></span>
                     <span>npm Package (Green)</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-dot" style="background-color: #f59e0b; box-shadow: 0 0 6px rgba(245, 158, 11, 0.8);"></span>
+                    <span class="legend-dot" style="background-color: var(--wa, #f5b942); box-shadow: 0 0 6px rgba(245, 185, 66, 0.6);"></span>
                     <span><strong>Divergent Versions</strong> (Amber Glow)</span>
                 </div>
             `;
@@ -1115,10 +1115,14 @@ const NetworkPage = {
         if (!this.svg) return;
         const nodes = this.svg.selectAll('.d3-node');
         const labels = this.svg.selectAll('.d3-node-label');
+        const isBipartite = this.currentMode === 'bipartite';
 
         if (!query) {
             nodes.attr('opacity', 1);
             labels.attr('opacity', 1);
+            if (isBipartite) {
+                labels.style('display', d => (d.nodeCategory === 'REPOSITORY' || (d.repoCount && d.repoCount > 1)) ? 'inline' : 'none');
+            }
             return;
         }
 
@@ -1126,13 +1130,17 @@ const NetworkPage = {
             const match = (d.label && d.label.toLowerCase().includes(query)) ||
                           (d.artifactId && d.artifactId.toLowerCase().includes(query)) ||
                           (d.groupId && d.groupId.toLowerCase().includes(query));
-            d3.select(this).attr('opacity', match ? 1 : 0.15);
+            d3.select(this).attr('opacity', match ? 1 : 0.12);
         });
 
         labels.each(function(d) {
             const match = (d.label && d.label.toLowerCase().includes(query)) ||
                           (d.artifactId && d.artifactId.toLowerCase().includes(query));
-            d3.select(this).attr('opacity', match ? 1 : 0.15);
+            const sel = d3.select(this);
+            sel.attr('opacity', match ? 1 : 0.08);
+            if (isBipartite) {
+                sel.style('display', match ? 'inline' : ((d.nodeCategory === 'REPOSITORY' || (d.repoCount && d.repoCount > 1)) ? 'inline' : 'none'));
+            }
         });
     }
 };

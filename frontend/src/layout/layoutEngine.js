@@ -26,9 +26,9 @@ export const layoutEngine = {
     const posMap = new Map();
 
     // 1. Position Repositories vertically on the left
-    const repoSpacing = options.repoSpacing || 95;
-    const startY = 40;
-    const repoX = 50;
+    const repoSpacing = options.repoSpacing || 115;
+    const startY = 50;
+    const repoX = 60;
 
     repos.forEach((repo, idx) => {
       posMap.set(repo.id, {
@@ -39,9 +39,9 @@ export const layoutEngine = {
 
     // 2. Position Dependencies in clean vertical columns
     const columns = options.columns || 3;
-    const colSpacing = options.colSpacing || 270;
-    const rowSpacing = options.rowSpacing || 78;
-    const depStartX = 420;
+    const colSpacing = options.colSpacing || 280;
+    const rowSpacing = options.rowSpacing || 82;
+    const depStartX = 480;
 
     deps.forEach((dep, idx) => {
       const col = idx % columns;
