@@ -165,9 +165,18 @@ export const RepositoryCitiesPage = ({ onSelectCity }) => {
                   <div className="city-avatar-box">
                     <Building2 size={20} style={{ color: 'var(--cc-accent, #6d8cff)' }} />
                   </div>
-                  <div style={{ minWidth: 0 }}>
-                    <h3 className="city-repo-name truncate" title={repo.repoName || repo.name || 'Unnamed Repository'}>
-                      {repo.repoName || repo.name || 'Unnamed Repository'}
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <h3
+                      className="city-repo-name truncate"
+                      title={repo.repoName || repo.name || (repo.repoUrl ? repo.repoUrl.replace(/^https?:\/\/github\.com\//, '') : '') || `Repository #${repo.id}`}
+                      style={{
+                        color: 'var(--cc-text, #ececf2)',
+                        fontWeight: 700,
+                        fontSize: '15px',
+                        margin: '0 0 3px 0'
+                      }}
+                    >
+                      {repo.repoName || repo.name || (repo.repoUrl ? repo.repoUrl.replace(/^https?:\/\/github\.com\//, '') : '') || `Repository #${repo.id}`}
                     </h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--cc-text-muted, #8b8b9a)' }}>
                       <span style={{ color: 'var(--cc-text, inherit)', fontWeight: 500 }}>{repo.language || 'Java'}</span>

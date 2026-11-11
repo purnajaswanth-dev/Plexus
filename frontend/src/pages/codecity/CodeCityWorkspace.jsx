@@ -127,10 +127,19 @@ const CodeCityWorkspaceInner = ({
   }, []);
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      workspaceContainerRef.current?.requestFullscreen?.();
+    if (!document.fullscreenElement && !isFullscreen) {
+      if (workspaceContainerRef.current?.requestFullscreen) {
+        workspaceContainerRef.current.requestFullscreen().catch(() => {
+          setIsFullscreen(true);
+        });
+      } else {
+        setIsFullscreen(true);
+      }
     } else {
-      document.exitFullscreen?.();
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+      setIsFullscreen(false);
     }
   };
 
@@ -597,7 +606,7 @@ const CodeCityWorkspaceInner = ({
   return (
     <div
       ref={workspaceContainerRef}
-      className="codecity-workspace-root"
+      className={`codecity-workspace-root ${isFullscreen ? 'is-enlarged' : ''}`}
       style={{
         width: '100%',
         height: '100%',
@@ -802,7 +811,7 @@ const CodeCityWorkspaceInner = ({
         </div>
 
         {/* Endpoint Selector Button & Quick Dropdown */}
-        <div style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
           <button
             onClick={() => setEndpointDropdownOpen(!endpointDropdownOpen)}
             style={{
@@ -828,14 +837,11 @@ const CodeCityWorkspaceInner = ({
             <ChevronDown size={14} />
           </button>
 
-          {/* Clear Route Button */}
+          {/* Clear Route Button - INLINE IN DOCUMENT FLOW (Zero Absolute Overlap!) */}
           {selectedEndpoint && (
             <button
               onClick={handleClearEndpoint}
               style={{
-                position: 'absolute',
-                left: 'calc(100% + 8px)',
-                top: 0,
                 height: '32px',
                 padding: '0 10px',
                 borderRadius: '6px',
@@ -998,220 +1004,109 @@ const CodeCityWorkspaceInner = ({
           )}
         </button>
 
-        {/* Global Search Box */}
-        <div style={{ position: 'relative', width: '220px', marginLeft: '0px' }}>
-          <Search size={13} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--cc-text-muted, #8b8b9a)' }} />
-          <input
-            type="text"
-            placeholder="Search city..."
-            value={globalSearch}
-            onChange={e => setGlobalSearch(e.target.value)}
-            style={{
-              width: '100%',
-              boxSizing: 'border-box',
-              padding: '6px 12px 6px 30px',
-              background: 'var(--cc-surface, #0f0f13)',
-              border: '1px solid var(--cc-border, #23232c)',
-              borderRadius: '6px',
-              fontSize: '12px',
-              color: 'var(--cc-text, #ececf2)',
-              outline: 'none'
-            }}
-          />
-          {globalSearch && (
-            <button
-              onClick={() => setGlobalSearch('')}
-              style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--cc-text-muted, #8b8b9a)', cursor: 'pointer' }}
-            >
-              ×
-            </button>
-          )}
-
-          {/* Search Dropdown */}
-          {searchResults.length > 0 && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 'calc(100% + 4px)',
-                left: 0,
-                right: 0,
-                background: 'var(--cc-surface, #0f0f13)',
-                border: '1px solid var(--cc-border, #23232c)',
-                borderRadius: '8px',
-                boxShadow: '0 12px 30px rgba(0, 0, 0, 0.5)',
-                zIndex: 100,
-                maxHeight: '260px',
-                overflowY: 'auto'
-              }}
-            >
-              {searchResults.map((item, i) => (
-                <div
-                  key={i}
-                  onClick={() => handleSelectSearchResult(item)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 10px',
-                    cursor: 'pointer',
-                    borderBottom: '1px solid var(--cc-border, #23232c)'
-                  }}
-                >
-                  <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 5px', borderRadius: '4px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }}>
-                    {item.type}
-                  </span>
-                  <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                    <div style={{ fontSize: '12px', color: 'var(--cc-text, #ececf2)' }}>{item.name}</div>
-                    <div style={{ fontSize: '10px', color: 'var(--cc-text-muted, #8b8b9a)' }}>{item.meta}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Level Pills: 1 · City, 2 · District, 3 · Building */}
-        <div style={{ display: 'flex', gap: '3px', background: 'var(--cc-surface-3, #1b1b23)', borderRadius: '8px', padding: '3px', border: '1px solid var(--cc-border, #23232c)' }}>
-          <button
-            onClick={() => {
-              setSemanticZoom('districts');
-              fitView({ padding: 0.35, duration: 500 });
-            }}
-            style={{
-              height: '30px',
-              padding: '0 12px',
-              border: 0,
-              borderRadius: '6px',
-              background: semanticZoom === 'districts' ? 'var(--cc-surface, #0f0f13)' : 'transparent',
-              color: semanticZoom === 'districts' ? 'var(--cc-text, #ececf2)' : 'var(--cc-text-muted, #8b8b9a)',
-              fontSize: '12px',
-              fontWeight: semanticZoom === 'districts' ? 600 : 500,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            1 · City
-          </button>
-          <button
-            onClick={() => {
-              setSemanticZoom('buildings');
-              fitView({ padding: 0.15, duration: 500 });
-            }}
-            style={{
-              height: '30px',
-              padding: '0 12px',
-              border: 0,
-              borderRadius: '6px',
-              background: semanticZoom === 'buildings' ? 'var(--cc-surface, #0f0f13)' : 'transparent',
-              color: semanticZoom === 'buildings' ? 'var(--cc-text, #ececf2)' : 'var(--cc-text-muted, #8b8b9a)',
-              fontSize: '12px',
-              fontWeight: semanticZoom === 'buildings' ? 600 : 500,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            2 · District
-          </button>
-          <button
-            onClick={() => setSemanticZoom('rooms')}
-            style={{
-              height: '30px',
-              padding: '0 12px',
-              border: 0,
-              borderRadius: '6px',
-              background: semanticZoom === 'rooms' ? 'var(--cc-surface, #0f0f13)' : 'transparent',
-              color: semanticZoom === 'rooms' ? 'var(--cc-text, #ececf2)' : 'var(--cc-text-muted, #8b8b9a)',
-              fontSize: '12px',
-              fontWeight: semanticZoom === 'rooms' ? 600 : 500,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            3 · Building
-          </button>
-        </div>
-
-        {/* Fit View Button */}
-        <button
-          onClick={() => fitView({ padding: 0.15, duration: 400 })}
-          style={{
-            background: 'var(--cc-surface, #0f0f13)',
-            border: '1px solid var(--cc-border, #23232c)',
-            color: 'var(--cc-text, #ececf2)',
-            padding: '7px 9px',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center'
-          }}
-          title="Fit City to Viewport"
-        >
-          <Maximize2 size={14} />
-        </button>
-
-        {/* Fullscreen Toggle Button */}
-        <button
-          onClick={toggleFullscreen}
-          style={{
-            background: 'var(--cc-surface, #0f0f13)',
-            border: '1px solid var(--cc-border, #23232c)',
-            color: 'var(--cc-text, #ececf2)',
-            padding: '7px 9px',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center'
-          }}
-          title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-        >
-          {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-        </button>
-
-        {/* User Account & Sign Out Controls */}
-        {auth?.user && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '6px' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'var(--cc-surface, #0f0f13)',
-                border: '1px solid var(--cc-border, #23232c)',
-                borderRadius: '6px',
-                padding: '4px 10px',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: 'var(--cc-text, #ececf2)'
-              }}
-              title={`Logged in as ${auth.user.email}`}
-            >
-              <User size={13} color="var(--cc-accent, #6d8cff)" />
-              <span style={{ maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {auth.user.email}
-              </span>
+        {/* Diagram Mode Only: Level Pills & Fit View */}
+        {rendererMode === 'diagram' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ display: 'flex', gap: '3px', background: 'var(--cc-surface-3, #1b1b23)', borderRadius: '8px', padding: '3px', border: '1px solid var(--cc-border, #23232c)' }}>
+              <button
+                onClick={() => {
+                  setSemanticZoom('districts');
+                  fitView({ padding: 0.35, duration: 500 });
+                }}
+                style={{
+                  height: '28px',
+                  padding: '0 10px',
+                  border: 0,
+                  borderRadius: '6px',
+                  background: semanticZoom === 'districts' ? 'var(--cc-surface, #0f0f13)' : 'transparent',
+                  color: semanticZoom === 'districts' ? 'var(--cc-text, #ececf2)' : 'var(--cc-text-muted, #8b8b9a)',
+                  fontSize: '11px',
+                  fontWeight: semanticZoom === 'districts' ? 600 : 500,
+                  cursor: 'pointer'
+                }}
+              >
+                1 · City
+              </button>
+              <button
+                onClick={() => {
+                  setSemanticZoom('buildings');
+                  fitView({ padding: 0.15, duration: 500 });
+                }}
+                style={{
+                  height: '28px',
+                  padding: '0 10px',
+                  border: 0,
+                  borderRadius: '6px',
+                  background: semanticZoom === 'buildings' ? 'var(--cc-surface, #0f0f13)' : 'transparent',
+                  color: semanticZoom === 'buildings' ? 'var(--cc-text, #ececf2)' : 'var(--cc-text-muted, #8b8b9a)',
+                  fontSize: '11px',
+                  fontWeight: semanticZoom === 'buildings' ? 600 : 500,
+                  cursor: 'pointer'
+                }}
+              >
+                2 · District
+              </button>
+              <button
+                onClick={() => {
+                  setSemanticZoom('rooms');
+                  fitView({ padding: 0.15, duration: 500 });
+                }}
+                style={{
+                  height: '28px',
+                  padding: '0 10px',
+                  border: 0,
+                  borderRadius: '6px',
+                  background: semanticZoom === 'rooms' ? 'var(--cc-surface, #0f0f13)' : 'transparent',
+                  color: semanticZoom === 'rooms' ? 'var(--cc-text, #ececf2)' : 'var(--cc-text-muted, #8b8b9a)',
+                  fontSize: '11px',
+                  fontWeight: semanticZoom === 'rooms' ? 600 : 500,
+                  cursor: 'pointer'
+                }}
+              >
+                3 · Building
+              </button>
             </div>
             <button
-              onClick={() => auth.signOut()}
+              onClick={() => fitView({ padding: 0.15, duration: 400 })}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
                 background: 'var(--cc-surface, #0f0f13)',
                 border: '1px solid var(--cc-border, #23232c)',
+                color: 'var(--cc-text, #ececf2)',
+                padding: '6px 8px',
                 borderRadius: '6px',
-                padding: '5px 10px',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#f26d6d',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center'
               }}
-              title="Sign Out"
+              title="Fit City to Viewport"
             >
-              <LogOut size={13} />
-              <span>Sign Out</span>
+              <Maximize2 size={13} />
             </button>
           </div>
         )}
+
+        {/* Enlarge / Fullscreen Workspace Toggle Button */}
+        <button
+          onClick={toggleFullscreen}
+          style={{
+            background: isFullscreen ? 'var(--cc-surface-3, #1b1b23)' : 'var(--cc-surface, #0f0f13)',
+            border: '1px solid var(--cc-border, #23232c)',
+            color: isFullscreen ? 'var(--cc-cyan, #38bdf8)' : 'var(--cc-text, #ececf2)',
+            height: '32px',
+            padding: '0 10px',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '11.5px',
+            fontWeight: 600
+          }}
+          title={isFullscreen ? "Exit Fullscreen" : "Enlarge Workspace into Fullscreen"}
+        >
+          {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+          <span>{isFullscreen ? 'Exit Fullscreen' : 'Enlarge'}</span>
+        </button>
       </header>
 
       {/* =========================================================================
@@ -1276,6 +1171,8 @@ const CodeCityWorkspaceInner = ({
               onSelectEntity={handleSelectEntity}
               impactMode={impactMode}
               onClearImpactMode={handleClearImpactMode}
+              isFullscreen={isFullscreen}
+              onToggleFullscreen={toggleFullscreen}
             />
           ) : (
             <ReactFlow

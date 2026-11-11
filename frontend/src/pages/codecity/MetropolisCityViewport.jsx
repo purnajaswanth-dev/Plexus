@@ -36,7 +36,9 @@ export const MetropolisCityViewport = ({
   selectedEntity: propSelectedEntity = null,
   onSelectEntity = () => {},
   impactMode = null,
-  onClearImpactMode = () => {}
+  onClearImpactMode = () => {},
+  isFullscreen: propIsFullscreen,
+  onToggleFullscreen
 }) => {
   const containerRef = useRef(null);
   const [pan, setPan] = useState({ x: 40, y: 40 });
@@ -46,6 +48,8 @@ export const MetropolisCityViewport = ({
   const [showMinimap, setShowMinimap] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
+
+  const effectiveFullscreen = propIsFullscreen !== undefined ? propIsFullscreen : isFullscreen;
 
   const [isDark, setIsDark] = useState(() => {
     return document.documentElement.getAttribute('data-theme') !== 'light' &&
@@ -68,12 +72,16 @@ export const MetropolisCityViewport = ({
   }, []);
 
   const toggleFullscreen = useCallback(() => {
-    if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen().catch(() => {});
+    if (onToggleFullscreen) {
+      onToggleFullscreen();
     } else {
-      document.exitFullscreen().catch(() => {});
+      if (!document.fullscreenElement) {
+        containerRef.current?.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
     }
-  }, []);
+  }, [onToggleFullscreen]);
 
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -690,12 +698,12 @@ export const MetropolisCityViewport = ({
       }}
     >
       {/* =================================================================== */}
-      {/* DOCKED SUB-TOOLBAR: BREADCRUMBS, DISTRICTS, OVERLAYS & LEVEL ZOOM  */}
+      {/* ROW 1: NAVIGATION & LOCATION BAR (Breadcrumbs, District, Search)    */}
       {/* =================================================================== */}
       <div
-        className="metropolis-docked-toolbar"
+        className="metropolis-nav-bar"
         style={{
-          height: '42px',
+          height: '38px',
           flexShrink: 0,
           background: cityTheme.hudBg,
           backdropFilter: 'blur(10px)',
@@ -707,13 +715,11 @@ export const MetropolisCityViewport = ({
           gap: '12px',
           zIndex: 25,
           fontSize: '12px',
-          color: cityTheme.hudText,
-          overflowX: 'auto',
-          scrollbarWidth: 'none'
+          color: cityTheme.hudText
         }}
       >
         {/* LEFT: Interactive Breadcrumbs Trail */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flexShrink: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1, overflow: 'hidden' }}>
           <button
             onClick={() => {
               fitView();
@@ -795,9 +801,10 @@ export const MetropolisCityViewport = ({
               </span>
             </>
           )}
+        </div>
 
-          <div style={{ width: '1px', height: '16px', background: cityTheme.hudBorder, margin: '0 6px', flexShrink: 0 }} />
-
+        {/* RIGHT: District Selector & In-City Search */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           {/* District Selector Filter */}
           <select
             value={selectedDistrictFilter}
@@ -819,18 +826,17 @@ export const MetropolisCityViewport = ({
               fontSize: '11px',
               fontWeight: 600,
               outline: 'none',
-              cursor: 'pointer',
-              flexShrink: 0
+              cursor: 'pointer'
             }}
           >
-            <option value="ALL">🌆 All Districts</option>
+            <option value="ALL">🌆 All Districts ({(cityData?.districts || []).length})</option>
             {(cityData?.districts || []).map(d => (
               <option key={d.id} value={d.id}>📍 {truncate(d.name, 20)} ({d.buildingCount})</option>
             ))}
           </select>
 
-          {/* Search Box in Sub-bar */}
-          <div style={{ position: 'relative', width: '180px', flexShrink: 0 }}>
+          {/* Search Box in Navigation Bar */}
+          <div style={{ position: 'relative', width: '200px' }}>
             <div
               style={{
                 display: 'flex',
@@ -845,7 +851,7 @@ export const MetropolisCityViewport = ({
               <Search size={12} style={{ color: cityTheme.hudMuted, marginRight: '6px', flexShrink: 0 }} />
               <input
                 type="text"
-                placeholder="Find in city..."
+                placeholder="Find class, method, file..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
@@ -874,7 +880,7 @@ export const MetropolisCityViewport = ({
                 style={{
                   position: 'absolute',
                   top: 'calc(100% + 4px)',
-                  left: 0,
+                  right: 0,
                   width: '280px',
                   background: cityTheme.hudBg,
                   backdropFilter: 'blur(10px)',
@@ -950,56 +956,53 @@ export const MetropolisCityViewport = ({
             )}
           </div>
         </div>
+      </div>
 
-        {/* RIGHT: Semantic Overlays & 5-Level Continuous Zoom Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          {/* Overlays Pill Group */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '3px',
-              background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-              border: `1px solid ${cityTheme.hudBorder}`,
-              borderRadius: '6px',
-              padding: '2px 4px'
-            }}
-          >
-            <span style={{ fontSize: '10px', color: cityTheme.hudMuted, fontWeight: 600, padding: '0 3px' }}>
-              Overlays:
-            </span>
-            {[
-              { key: 'CALLS', label: 'Calls', color: '#587C78' },
-              { key: 'PERSISTS_TO', label: 'DB', color: '#8D916B' },
-              { key: 'EXTERNAL_CALL', label: 'Ext', color: '#B77C61' },
-              { key: 'EVENT_ASYNC', label: 'Async', color: '#927D91' }
-            ].map(ov => (
-              <button
-                key={ov.key}
-                onClick={() => toggleOverlay(ov.key)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '3px',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  border: '1px solid',
-                  borderColor: overlayFilters[ov.key] ? ov.color : 'transparent',
-                  background: overlayFilters[ov.key] ? (isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(56, 189, 248, 0.08)') : 'transparent',
-                  color: overlayFilters[ov.key] ? ov.color : cityTheme.hudMuted,
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: ov.color }} />
-                {ov.label}
-              </button>
-            ))}
-
+      {/* =================================================================== */}
+      {/* ROW 2: VISUALIZATION CONTROLS BAR (Overlays, 5-Level Zoom, Camera)  */}
+      {/* =================================================================== */}
+      <div
+        className="metropolis-controls-bar"
+        style={{
+          height: '36px',
+          flexShrink: 0,
+          background: cityTheme.hudBg,
+          backdropFilter: 'blur(10px)',
+          borderBottom: `1px solid ${cityTheme.hudBorder}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 16px',
+          gap: '12px',
+          zIndex: 24,
+          fontSize: '11px',
+          color: cityTheme.hudText
+        }}
+      >
+        {/* LEFT: Overlays Pill Group */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '3px',
+            background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+            border: `1px solid ${cityTheme.hudBorder}`,
+            borderRadius: '6px',
+            padding: '2px 4px'
+          }}
+        >
+          <span style={{ fontSize: '10px', color: cityTheme.hudMuted, fontWeight: 600, padding: '0 3px' }}>
+            Layer Overlays:
+          </span>
+          {[
+            { key: 'CALLS', label: 'Calls', color: '#587C78' },
+            { key: 'PERSISTS_TO', label: 'DB', color: '#8D916B' },
+            { key: 'EXTERNAL_CALL', label: 'Ext', color: '#B77C61' },
+            { key: 'EVENT_ASYNC', label: 'Async', color: '#927D91' }
+          ].map(ov => (
             <button
-              onClick={() => setForceCutaway(!forceCutaway)}
-              title="Force interior cutaways (Rooms and Workstations)"
+              key={ov.key}
+              onClick={() => toggleOverlay(ov.key)}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -1007,19 +1010,43 @@ export const MetropolisCityViewport = ({
                 padding: '2px 6px',
                 borderRadius: '4px',
                 border: '1px solid',
-                borderColor: forceCutaway ? '#C09A62' : 'transparent',
-                background: forceCutaway ? (isDark ? 'rgba(192, 154, 98, 0.18)' : 'rgba(192, 154, 98, 0.15)') : 'transparent',
-                color: forceCutaway ? '#C09A62' : cityTheme.hudMuted,
+                borderColor: overlayFilters[ov.key] ? ov.color : 'transparent',
+                background: overlayFilters[ov.key] ? (isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(56, 189, 248, 0.08)') : 'transparent',
+                color: overlayFilters[ov.key] ? ov.color : cityTheme.hudMuted,
                 fontSize: '10px',
                 fontWeight: 600,
                 cursor: 'pointer'
               }}
             >
-              <Eye size={10} /> Cutaway
+              <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: ov.color }} />
+              {ov.label}
             </button>
-          </div>
+          ))}
 
-          {/* 5-Level Continuous Zoom Switcher */}
+          <button
+            onClick={() => setForceCutaway(!forceCutaway)}
+            title="Force interior cutaways (Rooms and Workstations)"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '3px',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              border: '1px solid',
+              borderColor: forceCutaway ? '#C09A62' : 'transparent',
+              background: forceCutaway ? (isDark ? 'rgba(192, 154, 98, 0.18)' : 'rgba(192, 154, 98, 0.15)') : 'transparent',
+              color: forceCutaway ? '#C09A62' : cityTheme.hudMuted,
+              fontSize: '10px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            <Eye size={10} /> Cutaway
+          </button>
+        </div>
+
+        {/* RIGHT: 5-Level Continuous Zoom Switcher & Camera Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div
             style={{
               display: 'flex',
@@ -1032,17 +1059,17 @@ export const MetropolisCityViewport = ({
             }}
           >
             {[
-              { id: 1, label: '1 · Metro' },
-              { id: 2, label: '2 · Dist' },
+              { id: 1, label: '1 · Metropolis' },
+              { id: 2, label: '2 · District' },
               { id: 3, label: '3 · Block' },
-              { id: 4, label: '4 · Build' },
+              { id: 4, label: '4 · Building' },
               { id: 5, label: '5 · Room' }
             ].map(lvl => (
               <button
                 key={lvl.id}
                 onClick={() => setLevelZoom(lvl.id)}
                 style={{
-                  padding: '3px 6px',
+                  padding: '2px 6px',
                   borderRadius: '4px',
                   border: 'none',
                   background: zoomLevel.id === lvl.id ? (isDark ? 'var(--cc-accent, #6d8cff)' : 'var(--cc-border-2, #cdd2dd)') : 'transparent',
@@ -1064,13 +1091,6 @@ export const MetropolisCityViewport = ({
             </span>
 
             <button
-              onClick={() => setZoom(z => Math.min(z * 1.25, 3.5))}
-              title="Zoom In"
-              style={{ background: 'transparent', border: 'none', color: cityTheme.hudMuted, padding: '3px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
-            >
-              <ZoomIn size={12} />
-            </button>
-            <button
               onClick={() => setZoom(z => Math.max(z * 0.8, 0.22))}
               title="Zoom Out"
               style={{ background: 'transparent', border: 'none', color: cityTheme.hudMuted, padding: '3px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
@@ -1078,20 +1098,55 @@ export const MetropolisCityViewport = ({
               <ZoomOut size={12} />
             </button>
             <button
-              onClick={fitView}
-              title="Fit Metropolis into Canvas"
-              style={{ background: 'transparent', border: 'none', color: isDark ? '#38bdf8' : '#0278b8', padding: '3px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
+              onClick={() => setZoom(z => Math.min(z * 1.25, 3.5))}
+              title="Zoom In"
+              style={{ background: 'transparent', border: 'none', color: cityTheme.hudMuted, padding: '3px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
             >
-              <Compass size={12} />
-            </button>
-            <button
-              onClick={toggleFullscreen}
-              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-              style={{ background: 'transparent', border: 'none', color: isDark ? '#38bdf8' : '#0278b8', padding: '3px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
-            >
-              {isFullscreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+              <ZoomIn size={12} />
             </button>
           </div>
+
+          <button
+            onClick={fitView}
+            title="Fit Metropolis into Canvas"
+            style={{
+              background: 'transparent',
+              border: `1px solid ${cityTheme.hudBorder}`,
+              color: isDark ? '#38bdf8' : '#0278b8',
+              padding: '3px 8px',
+              cursor: 'pointer',
+              borderRadius: '6px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '11px',
+              fontWeight: 600
+            }}
+          >
+            <Compass size={12} />
+            <span>Fit City</span>
+          </button>
+
+          <button
+            onClick={toggleFullscreen}
+            title={effectiveFullscreen ? 'Exit Fullscreen' : 'Enlarge Metropolis'}
+            style={{
+              background: 'transparent',
+              border: `1px solid ${cityTheme.hudBorder}`,
+              color: isDark ? '#38bdf8' : '#0278b8',
+              padding: '3px 8px',
+              cursor: 'pointer',
+              borderRadius: '6px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '11px',
+              fontWeight: 600
+            }}
+          >
+            {effectiveFullscreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+            <span>{effectiveFullscreen ? 'Exit' : 'Enlarge'}</span>
+          </button>
         </div>
       </div>
 
@@ -2156,48 +2211,6 @@ export const MetropolisCityViewport = ({
             </svg>
           </div>
         )}
-      </div>
-
-      {/* =================================================================== */}
-      {/* FLOATING COMPASS PILL (Bottom Left - Non-colliding)                 */}
-      {/* =================================================================== */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '16px',
-          left: '16px',
-          zIndex: 30,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          background: cityTheme.hudBg,
-          backdropFilter: 'blur(10px)',
-          border: `1px solid ${cityTheme.hudBorder}`,
-          borderRadius: '8px',
-          padding: '6px 12px',
-          fontSize: '11px',
-          color: cityTheme.hudText,
-          boxShadow: isDark ? '0 4px 16px rgba(0, 0, 0, 0.4)' : '0 4px 16px rgba(18, 20, 26, 0.06)'
-        }}
-      >
-        <Compass size={14} style={{ color: isDark ? 'var(--cc-cyan, #38bdf8)' : 'var(--a, #3552d6)' }} />
-        <span style={{ fontFamily: "var(--m, 'Geist Mono', monospace)", fontWeight: 600 }}>METROPOLIS N-34</span>
-        <span style={{ color: cityTheme.hudBorder }}>|</span>
-        <button
-          onClick={fitView}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: isDark ? 'var(--cc-cyan, #38bdf8)' : 'var(--a, #3552d6)',
-            fontWeight: 700,
-            cursor: 'pointer',
-            padding: 0
-          }}
-        >
-          Reset View
-        </button>
-        <span style={{ color: cityTheme.hudBorder }}>|</span>
-        <span style={{ color: cityTheme.hudMuted, fontSize: '10px' }}>Space+Drag • F: Fit • +/-: Zoom</span>
       </div>
       </div>
     </div>
