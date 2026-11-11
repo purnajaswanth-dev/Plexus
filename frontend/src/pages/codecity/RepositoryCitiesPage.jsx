@@ -87,7 +87,7 @@ export const RepositoryCitiesPage = ({ onSelectCity }) => {
       <div className="cities-header">
         <div>
           <h1 className="cities-main-title">
-            <span style={{ color: '#587C78' }}>CodeCity</span> Software Metropolis
+            <span style={{ color: 'var(--cc-accent, #6d8cff)' }}>CodeCity</span> Software Metropolis
           </h1>
           <p className="cities-subtitle">
             Explore your entire codebase as a 2D digital city. Observe execution routes, explore architectural blocks, and inspect traceable source evidence.
@@ -102,7 +102,7 @@ export const RepositoryCitiesPage = ({ onSelectCity }) => {
       {/* Toolbar: Search, Filters, and Summary */}
       <div className="cities-toolbar">
         <div className="cities-search-bar">
-          <Search size={15} style={{ color: '#64748b' }} />
+          <Search size={15} style={{ color: 'var(--cc-text-muted, #8b8b9a)' }} />
           <input
             type="text"
             className="cities-search-input"
@@ -113,7 +113,7 @@ export const RepositoryCitiesPage = ({ onSelectCity }) => {
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '13px' }}
+              style={{ background: 'none', border: 'none', color: 'var(--cc-text-muted, #8b8b9a)', cursor: 'pointer', fontSize: '13px' }}
             >
               ✕
             </button>
@@ -163,12 +163,14 @@ export const RepositoryCitiesPage = ({ onSelectCity }) => {
               <div className="city-card-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                   <div className="city-avatar-box">
-                    <Building2 size={20} style={{ color: '#587C78' }} />
+                    <Building2 size={20} style={{ color: 'var(--cc-accent, #6d8cff)' }} />
                   </div>
                   <div style={{ minWidth: 0 }}>
-                    <h3 className="city-repo-name truncate" title={repo.repoName}>{repo.repoName}</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#828fa8' }}>
-                      <span style={{ color: '#cbd5e1', fontWeight: 500 }}>{repo.language || 'Java'}</span>
+                    <h3 className="city-repo-name truncate" title={repo.repoName || repo.name || 'Unnamed Repository'}>
+                      {repo.repoName || repo.name || 'Unnamed Repository'}
+                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--cc-text-muted, #8b8b9a)' }}>
+                      <span style={{ color: 'var(--cc-text, inherit)', fontWeight: 500 }}>{repo.language || 'Java'}</span>
                       <span>•</span>
                       <span>{repo.defaultBranch || 'main'}</span>
                       {repo.isMonorepo && (
@@ -188,17 +190,17 @@ export const RepositoryCitiesPage = ({ onSelectCity }) => {
               {/* City Architectural Preview / Metaphor Skyline */}
               <div className="city-skyline-preview">
                 <div className="skyline-bars">
-                  <div className="sky-bar" style={{ height: '48%', background: '#587C78' }} />
+                  <div className="sky-bar" style={{ height: '48%', background: 'var(--cc-accent, #6d8cff)' }} />
                   <div className="sky-bar" style={{ height: '78%', background: '#71869B' }} />
-                  <div className="sky-bar" style={{ height: '60%', background: '#587C78' }} />
+                  <div className="sky-bar" style={{ height: '60%', background: 'var(--cc-cyan, #38bdf8)' }} />
                   <div className="sky-bar" style={{ height: '90%', background: '#8599ad' }} />
                   <div className="sky-bar" style={{ height: '52%', background: '#C09A62' }} />
                   <div className="sky-bar" style={{ height: '96%', background: '#8D916B' }} />
                   <div className="sky-bar" style={{ height: '68%', background: '#9EA37E' }} />
-                  <div className="sky-bar" style={{ height: '44%', background: '#62574E' }} />
+                  <div className="sky-bar" style={{ height: '44%', background: 'var(--cc-text-muted, #8b8b9a)' }} />
                 </div>
                 <div className="skyline-overlay">
-                  <span className="skyline-text" style={{ color: repo.hasCity ? '#587C78' : '#9aa6c4' }}>
+                  <span className="skyline-text" style={{ color: repo.hasCity ? 'var(--cc-accent, #6d8cff)' : 'var(--cc-text-muted, #8b8b9a)' }}>
                     {repo.hasCity ? '● 2D Software City Active' : '○ City Pending Generation'}
                   </span>
                 </div>
@@ -207,11 +209,11 @@ export const RepositoryCitiesPage = ({ onSelectCity }) => {
               {/* Stats Row */}
               <div className="city-stats-row">
                 <div className="city-stat-item">
-                  <span className="stat-val" style={{ color: '#587C78' }}>{repo.componentsCount || 0}</span>
+                  <span className="stat-val" style={{ color: 'var(--cc-accent, #6d8cff)' }}>{repo.componentsCount || 0}</span>
                   <span className="stat-lbl">Buildings</span>
                 </div>
                 <div className="city-stat-item">
-                  <span className="stat-val" style={{ color: '#587C78' }}>{repo.relationshipsCount || 0}</span>
+                  <span className="stat-val" style={{ color: 'var(--cc-cyan, #38bdf8)' }}>{repo.relationshipsCount || 0}</span>
                   <span className="stat-lbl">Roads</span>
                 </div>
                 <div className="city-stat-item">
@@ -224,7 +226,7 @@ export const RepositoryCitiesPage = ({ onSelectCity }) => {
               <div className="city-card-footer">
                 {repo.hasCity ? (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                    <span style={{ fontSize: '12px', color: '#828fa8' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--cc-text-muted, #8b8b9a)' }}>
                       {repo.analyzedAt ? new Date(repo.analyzedAt).toLocaleDateString() : 'Ready'}
                     </span>
                     <button className="btn-enter-city">
@@ -244,7 +246,7 @@ export const RepositoryCitiesPage = ({ onSelectCity }) => {
                       </span>
                     ) : (
                       <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Sparkles size={14} style={{ color: '#587C78' }} /> Generate Software City
+                        <Sparkles size={14} style={{ color: 'var(--cc-accent, #6d8cff)' }} /> Generate Software City
                       </span>
                     )}
                   </button>

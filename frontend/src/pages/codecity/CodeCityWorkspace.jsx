@@ -599,14 +599,17 @@ const CodeCityWorkspaceInner = ({
       ref={workspaceContainerRef}
       className="codecity-workspace-root"
       style={{
-        width: '100vw',
-        height: '100vh',
+        width: '100%',
+        height: '100%',
+        maxWidth: '100%',
+        maxHeight: '100%',
         boxSizing: 'border-box',
         background: 'var(--cc-bg, #09090c)',
         color: 'var(--cc-text, #ececf2)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
+        position: 'relative',
         fontFamily: "var(--f, 'Geist', system-ui, sans-serif)"
       }}
     >
@@ -624,7 +627,7 @@ const CodeCityWorkspaceInner = ({
           padding: '0 20px',
           borderBottom: '1px solid var(--cc-border, #23232c)',
           background: 'var(--cc-surface-2, #15151b)',
-          zIndex: 60,
+          zIndex: 20,
           position: 'relative',
           color: 'var(--cc-text, #ececf2)'
         }}
@@ -1214,9 +1217,9 @@ const CodeCityWorkspaceInner = ({
       {/* =========================================================================
           MAIN BODY (Canvas on Center/Left, Request Journey Inspector on Right)
           ========================================================================= */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+      <div style={{ display: 'flex', flex: 1, minWidth: 0, minHeight: 0, overflow: 'hidden', position: 'relative' }}>
         {/* Interactive Software City Canvas */}
-        <main style={{ flex: 1, height: '100%', position: 'relative', background: 'var(--cc-bg, #09090c)' }}>
+        <main style={{ flex: 1, minWidth: 0, minHeight: 0, height: '100%', position: 'relative', background: 'var(--cc-bg, #09090c)', overflow: 'hidden' }}>
           {loading && (
             <div
               style={{
@@ -1318,7 +1321,7 @@ const CodeCityWorkspaceInner = ({
 
         {/* Right Sidebar: Component Inspector (when clicked without active journey or when toggled) */}
         {inspectorOpen && (!executionPath || !showExplanationPanel) && (
-          <aside style={{ width: '400px', background: '#EFE9E3', borderLeft: '1px solid #D9CFC7', zIndex: 50, overflowY: 'auto' }}>
+          <aside style={{ width: '400px', background: 'var(--cc-surface, #0f0f13)', borderLeft: '1px solid var(--cc-border, #23232c)', color: 'var(--cc-text, #ececf2)', zIndex: 30, overflowY: 'auto' }}>
             <ComponentInspectorPanel
               repositoryId={selectedRepoId}
               repositoryData={currentRepoData}

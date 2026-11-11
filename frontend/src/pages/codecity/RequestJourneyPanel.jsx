@@ -124,8 +124,9 @@ export const RequestJourneyPanel = ({
       style={{
         width: '400px',
         boxSizing: 'border-box',
-        background: '#EFE9E3',
-        borderLeft: '1px solid #D9CFC7',
+        background: 'var(--cc-surface, #0f0f13)',
+        borderLeft: '1px solid var(--cc-border, #23232c)',
+        color: 'var(--cc-text, #ececf2)',
         padding: '14px 22px',
         display: 'flex',
         flexDirection: 'column',
@@ -162,15 +163,15 @@ export const RequestJourneyPanel = ({
 
       {/* File & Location Information */}
       <div>
-        <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-.01em', color: '#39332E' }}>
+        <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-.01em', color: 'var(--cc-text, #ececf2)' }}>
           {fileName}
         </div>
         <div
           style={{
-            font: "500 12px/1.35 'JetBrains Mono',monospace",
-            color: '#39332E',
-            background: '#FFFFFF',
-            border: '1px solid #C09A62',
+            font: "500 12px/1.35 var(--m, 'Geist Mono', monospace)",
+            color: 'var(--cc-text, #ececf2)',
+            background: 'var(--cc-surface-2, #15151b)',
+            border: '1px solid var(--cc-border, #23232c)',
             borderRadius: '6px',
             padding: '6px 9px',
             marginTop: '5px',
@@ -180,17 +181,17 @@ export const RequestJourneyPanel = ({
         >
           {fullPath}
         </div>
-        <div style={{ fontSize: '11.5px', color: '#62574E', marginTop: '4px' }}>
+        <div style={{ fontSize: '11.5px', color: 'var(--cc-text-muted, #8b8b9a)', marginTop: '4px' }}>
           {districtName} · Building {buildingIdShort} · {roomCount} {roomCount === 1 ? 'room (type)' : 'rooms (types)'}
         </div>
       </div>
 
       {/* What / Why Here */}
-      <div style={{ fontSize: '12.5px', lineHeight: 1.4, color: '#39332E' }}>
-        <b style={{ color: '#62574E', fontWeight: 600 }}>What: </b>
+      <div style={{ fontSize: '12.5px', lineHeight: 1.4, color: 'var(--cc-text, #ececf2)' }}>
+        <b style={{ color: 'var(--cc-text-muted, #8b8b9a)', fontWeight: 600 }}>What: </b>
         {currentTransition?.whatIsHappening || currentStep.whatIsHappening || `${callerName} invokes ${calleeName}.${activeMethod}().`}
         <br />
-        <b style={{ color: '#62574E', fontWeight: 600 }}>Why here: </b>
+        <b style={{ color: 'var(--cc-text-muted, #8b8b9a)', fontWeight: 600 }}>Why here: </b>
         {currentTransition?.whyInvolved || currentStep.whyInvolved || `${callerName} calls ${calleeName}.${activeMethod}().`}{' '}
         <span
           style={{
@@ -198,8 +199,8 @@ export const RequestJourneyPanel = ({
             font: '700 9.5px Inter,sans-serif',
             padding: '1px 5px',
             borderRadius: '4px',
-            background: evidenceLevel === 'STATIC' ? 'rgba(88, 124, 120, 0.15)' : 'rgba(146, 125, 145, 0.15)',
-            color: evidenceLevel === 'STATIC' ? '#587C78' : '#927D91',
+            background: evidenceLevel === 'STATIC' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(167, 139, 250, 0.15)',
+            color: evidenceLevel === 'STATIC' ? 'var(--cc-cyan, #38bdf8)' : '#a78bfa',
             verticalAlign: '1px'
           }}
         >
@@ -211,19 +212,19 @@ export const RequestJourneyPanel = ({
       {(activeBranch || currentStep.branchCondition) && (
         <div
           style={{
-            background: '#F9F8F6',
-            border: '1px solid #D9CFC7',
+            background: 'var(--cc-surface-2, #15151b)',
+            border: '1px solid var(--cc-border, #23232c)',
             borderRadius: '8px',
             padding: '8px 10px',
             fontSize: '11.5px',
-            color: '#39332E'
+            color: 'var(--cc-text, #ececf2)'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: '#587C78', marginBottom: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: 'var(--cc-accent, #6d8cff)', marginBottom: '4px' }}>
             <GitBranch size={13} />
             Conditional Branch: if ({activeBranch?.conditionText || currentStep.branchCondition})
           </div>
-          <div style={{ fontSize: '11px', color: '#62574E', lineHeight: 1.35 }}>
+          <div style={{ fontSize: '11px', color: 'var(--cc-text-muted, #8b8b9a)', lineHeight: 1.35 }}>
             • Branch A: Throws exception or alternative logic on condition.<br />
             • Branch B: Continues forward request execution.<br />
             <i style={{ color: '#C09A62', display: 'block', marginTop: '3px' }}>
@@ -236,24 +237,24 @@ export const RequestJourneyPanel = ({
       {/* Inside this building */}
       <div
         style={{
-          background: '#FFFFFF',
+          background: 'var(--cc-surface-2, #15151b)',
           borderRadius: '8px',
-          border: '1px solid #D9CFC7',
+          border: '1px solid var(--cc-border, #23232c)',
           padding: '8px 10px',
           fontSize: '11.5px',
           lineHeight: 1.45,
-          color: '#39332E'
+          color: 'var(--cc-text, #ececf2)'
         }}
       >
-        <div style={{ fontSize: '10.5px', letterSpacing: '.08em', color: '#81776F', fontWeight: 600, marginBottom: '3px' }}>
+        <div style={{ fontSize: '10.5px', letterSpacing: '.08em', color: 'var(--cc-text-muted, #8b8b9a)', fontWeight: 600, marginBottom: '3px' }}>
           INSIDE THIS BUILDING (LEVEL 3)
         </div>
         <div>
-          <b style={{ color: '#587C78' }}>Room (Type): {activeClass}</b> ·{' '}
-          <span style={{ color: '#39332E', fontWeight: 600 }}>Workstation: {activeMethod}() ● active</span>
+          <b style={{ color: 'var(--cc-cyan, #38bdf8)' }}>Room (Type): {activeClass}</b> ·{' '}
+          <span style={{ color: 'var(--cc-text, #ececf2)', fontWeight: 600 }}>Workstation: {activeMethod}() ● active</span>
         </div>
         {bldgObj?.rooms && bldgObj.rooms.length > 1 && (
-          <div style={{ marginTop: '3px', color: '#62574E' }}>
+          <div style={{ marginTop: '3px', color: 'var(--cc-text-muted, #8b8b9a)' }}>
             Companion rooms: {bldgObj.rooms.filter(r => r.name !== activeClass).map(r => r.name).join(', ')}
           </div>
         )}
@@ -267,17 +268,17 @@ export const RequestJourneyPanel = ({
           gap: '3px 8px',
           fontSize: '12px',
           lineHeight: 1.3,
-          color: '#39332E'
+          color: 'var(--cc-text, #ececf2)'
         }}
       >
-        <div style={{ color: '#62574E', fontWeight: 600 }}>Input</div>
-        <div style={{ fontFamily: 'monospace', color: '#71869B' }}>
+        <div style={{ color: 'var(--cc-text-muted, #8b8b9a)', fontWeight: 600 }}>Input</div>
+        <div style={{ fontFamily: "var(--m, 'Geist Mono', monospace)", color: '#71869B' }}>
           {currentTransition?.inputDetails || currentStep.inputDetails || 'Parameters'}
         </div>
-        <div style={{ color: '#62574E', fontWeight: 600 }}>Inside</div>
+        <div style={{ color: 'var(--cc-text-muted, #8b8b9a)', fontWeight: 600 }}>Inside</div>
         <div>{currentTransition?.processingDetails || currentStep.processingDetails || 'Execution logic'}</div>
-        <div style={{ color: '#62574E', fontWeight: 600 }}>Output</div>
-        <div style={{ fontFamily: 'monospace', color: '#64836B' }}>
+        <div style={{ color: 'var(--cc-text-muted, #8b8b9a)', fontWeight: 600 }}>Output</div>
+        <div style={{ fontFamily: "var(--m, 'Geist Mono', monospace)", color: '#34d399' }}>
           {currentTransition?.outputDetails || currentStep.outputDetails || 'Return value'}
         </div>
       </div>
@@ -285,54 +286,54 @@ export const RequestJourneyPanel = ({
       {/* Source Evidence Box */}
       <div
         style={{
-          border: '1px solid #D9CFC7',
+          border: '1px solid var(--cc-border, #23232c)',
           borderRadius: '8px',
           padding: '8px 10px',
-          background: '#FFFFFF'
+          background: 'var(--cc-surface-2, #15151b)'
         }}
       >
-        <div style={{ fontSize: '10.5px', letterSpacing: '.08em', color: '#81776F', fontWeight: 600, marginBottom: '4px' }}>
+        <div style={{ fontSize: '10.5px', letterSpacing: '.08em', color: 'var(--cc-text-muted, #8b8b9a)', fontWeight: 600, marginBottom: '4px' }}>
           SOURCE EVIDENCE
         </div>
-        <div style={{ font: "400 11px 'JetBrains Mono',monospace", margin: '3px 0 5px', color: '#587C78' }}>
+        <div style={{ font: "400 11px var(--m, 'Geist Mono', monospace)", margin: '3px 0 5px', color: 'var(--cc-cyan, #38bdf8)' }}>
           {currentTransition?.callExpression || currentStep.callExpression || `${callerName} -> ${calleeName}.${activeMethod}()`}
         </div>
 
         {/* Real Code Excerpt */}
         <div
           style={{
-            font: "400 11px/1.5 'JetBrains Mono',monospace",
-            background: '#F9F8F6',
+            font: "400 11px/1.5 var(--m, 'Geist Mono', monospace)",
+            background: 'var(--cc-surface-3, #1b1b23)',
             borderRadius: '6px',
             padding: '6px 8px',
             whiteSpace: 'pre',
             overflowX: 'auto',
-            color: '#39332E',
-            border: '1px solid #D9CFC7'
+            color: 'var(--cc-text, #ececf2)',
+            border: '1px solid var(--cc-border, #23232c)'
           }}
         >
           {sourceLoading ? (
-            <span style={{ color: '#81776F' }}>Loading source evidence from repository...</span>
+            <span style={{ color: 'var(--cc-text-muted, #8b8b9a)' }}>Loading source evidence from repository...</span>
           ) : sourceData && sourceData.lines && sourceData.lines.length > 0 ? (
             sourceData.lines.map((l, idx) => (
               <div
                 key={idx}
                 style={{
-                  background: l.isHighlighted ? 'rgba(192, 154, 98, 0.18)' : 'transparent',
+                  background: l.isHighlighted ? 'rgba(109, 140, 255, 0.18)' : 'transparent',
                   display: 'flex',
                   gap: '8px'
                 }}
               >
-                <span style={{ color: '#81776F', userSelect: 'none', minWidth: '32px' }}>
+                <span style={{ color: 'var(--cc-text-muted, #8b8b9a)', userSelect: 'none', minWidth: '32px' }}>
                   [{l.lineNumber}]
                 </span>
-                <span style={{ color: l.isHighlighted ? '#39332E' : '#62574E' }}>
+                <span style={{ color: l.isHighlighted ? 'var(--cc-accent, #6d8cff)' : 'var(--cc-text, #ececf2)' }}>
                   {l.code}
                 </span>
               </div>
             ))
           ) : (
-            <div style={{ color: '#62574E' }}>
+            <div style={{ color: 'var(--cc-text-muted, #8b8b9a)' }}>
               <span>[{currentStep.sourceLineNumber || 1}] </span>
               <span>{currentStep.evidence || currentStep.sourceEvidence || 'AST invocation verified'}</span>
             </div>
@@ -347,8 +348,8 @@ export const RequestJourneyPanel = ({
               padding: '2px 6px',
               borderRadius: '12px',
               fontWeight: 600,
-              background: 'rgba(88, 124, 120, 0.15)',
-              color: '#587C78'
+              background: 'rgba(56, 189, 248, 0.15)',
+              color: 'var(--cc-cyan, #38bdf8)'
             }}
           >
             Static · AST ✓
@@ -359,8 +360,8 @@ export const RequestJourneyPanel = ({
               padding: '2px 6px',
               borderRadius: '12px',
               fontWeight: 600,
-              background: '#EFE9E3',
-              color: '#62574E'
+              background: 'var(--cc-surface-3, #1b1b23)',
+              color: 'var(--cc-text-muted, #8b8b9a)'
             }}
           >
             Runtime · none recorded
@@ -371,8 +372,8 @@ export const RequestJourneyPanel = ({
               padding: '2px 6px',
               borderRadius: '12px',
               fontWeight: 600,
-              background: isFrameworkOp ? 'rgba(113, 134, 155, 0.15)' : '#EFE9E3',
-              color: isFrameworkOp ? '#71869B' : '#62574E'
+              background: isFrameworkOp ? 'rgba(113, 134, 155, 0.15)' : 'var(--cc-surface-3, #1b1b23)',
+              color: isFrameworkOp ? '#71869B' : 'var(--cc-text-muted, #8b8b9a)'
             }}
           >
             {isFrameworkOp ? 'Inferred · Framework' : 'Inferred · none'}
@@ -391,9 +392,9 @@ export const RequestJourneyPanel = ({
             flex: 1,
             height: '38px',
             borderRadius: '8px',
-            border: '1px solid #D9CFC7',
-            background: '#FFFFFF',
-            color: prevStep ? '#39332E' : '#81776F',
+            border: '1px solid var(--cc-border, #23232c)',
+            background: 'var(--cc-surface-2, #15151b)',
+            color: prevStep ? 'var(--cc-text, #ececf2)' : 'var(--cc-text-muted, #8b8b9a)',
             fontSize: '12px',
             fontWeight: 500,
             cursor: prevStep ? 'pointer' : 'not-allowed',
@@ -415,8 +416,8 @@ export const RequestJourneyPanel = ({
             height: '38px',
             borderRadius: '8px',
             border: 0,
-            background: nextStep ? '#C09A62' : '#D9CFC7',
-            color: nextStep ? '#ffffff' : '#81776F',
+            background: nextStep ? 'var(--cc-accent, #6d8cff)' : 'var(--cc-surface-3, #1b1b23)',
+            color: nextStep ? '#ffffff' : 'var(--cc-text-muted, #8b8b9a)',
             fontSize: '12px',
             fontWeight: 600,
             cursor: nextStep ? 'pointer' : 'not-allowed',

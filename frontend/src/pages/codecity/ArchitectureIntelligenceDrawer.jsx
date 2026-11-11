@@ -78,22 +78,22 @@ export const ArchitectureIntelligenceDrawer = ({
         bottom: 0,
         width: '520px',
         maxWidth: '90vw',
-        background: '#EFE9E3',
-        borderLeft: '1px solid #D9CFC7',
-        boxShadow: '-8px 0 32px rgba(57, 51, 46, 0.15)',
+        background: 'var(--cc-surface, #0f0f13)',
+        borderLeft: '1px solid var(--cc-border, #23232c)',
+        boxShadow: '-8px 0 32px rgba(0, 0, 0, 0.35)',
         zIndex: 80,
         display: 'flex',
         flexDirection: 'column',
-        fontFamily: "'Inter', system-ui, sans-serif",
-        color: '#39332E'
+        fontFamily: "var(--f, 'Geist', system-ui, sans-serif)",
+        color: 'var(--cc-text, #ececf2)'
       }}
     >
       {/* Drawer Header */}
       <div
         style={{
           padding: '16px 20px',
-          borderBottom: '1px solid #D9CFC7',
-          background: '#161d30',
+          borderBottom: '1px solid var(--cc-border, #23232c)',
+          background: 'var(--cc-surface-2, #15151b)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'

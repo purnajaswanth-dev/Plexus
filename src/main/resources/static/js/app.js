@@ -649,7 +649,7 @@ const App = {
 
         // Toggle full viewport mode on content-area for graph visual explorers
         const contentArea = document.getElementById('content-area');
-        const isGraph = (viewName === 'architecture' || viewName === 'dependency-map' || viewName === 'repository-network');
+        const isGraph = (viewName === 'codecity' || viewName === 'architecture' || viewName === 'dependency-map' || viewName === 'repository-network');
         if (contentArea) {
             contentArea.classList.toggle('is-graph-active', isGraph);
         }

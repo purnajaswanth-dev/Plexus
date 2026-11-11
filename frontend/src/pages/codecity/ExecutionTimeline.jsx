@@ -84,8 +84,9 @@ export const ExecutionTimeline = ({
       className="codecity-playback-bar"
       style={{
         boxSizing: 'border-box',
-        borderTop: '1px solid #D9CFC7',
-        background: '#EFE9E3',
+        borderTop: '1px solid var(--cc-border, #23232c)',
+        background: 'var(--cc-surface-2, #15151b)',
+        color: 'var(--cc-text, #ececf2)',
         display: 'flex',
         flexDirection: 'column',
         padding: '10px 24px',
@@ -137,9 +138,9 @@ export const ExecutionTimeline = ({
               width: '40px',
               height: '40px',
               borderRadius: '8px',
-              border: '1px solid #D9CFC7',
-              background: '#FFFFFF',
-              color: activeStepIndex <= 1 ? '#81776F' : '#39332E',
+              border: '1px solid var(--cc-border, #23232c)',
+              background: 'var(--cc-surface, #0f0f13)',
+              color: activeStepIndex <= 1 ? 'var(--cc-text-muted, #8b8b9a)' : 'var(--cc-text, #ececf2)',
               fontSize: '18px',
               cursor: activeStepIndex <= 1 ? 'not-allowed' : 'pointer',
               display: 'flex',
@@ -157,9 +158,9 @@ export const ExecutionTimeline = ({
               width: '40px',
               height: '40px',
               borderRadius: '8px',
-              border: '1px solid #D9CFC7',
-              background: '#FFFFFF',
-              color: activeStepIndex >= totalSteps ? '#81776F' : '#39332E',
+              border: '1px solid var(--cc-border, #23232c)',
+              background: 'var(--cc-surface, #0f0f13)',
+              color: activeStepIndex >= totalSteps ? 'var(--cc-text-muted, #8b8b9a)' : 'var(--cc-text, #ececf2)',
               fontSize: '18px',
               cursor: activeStepIndex >= totalSteps ? 'not-allowed' : 'pointer',
               display: 'flex',
@@ -181,7 +182,7 @@ export const ExecutionTimeline = ({
               right: '30px',
               top: '12px',
               height: '4px',
-              background: '#D9CFC7',
+              background: 'var(--cc-border, #23232c)',
               borderRadius: '2px'
             }}
           />
@@ -355,9 +356,9 @@ export const ExecutionTimeline = ({
             height: '38px',
             padding: '0 12px',
             borderRadius: '8px',
-            border: '1px solid #D9CFC7',
-            background: '#FFFFFF',
-            color: '#39332E',
+            border: '1px solid var(--cc-border, #23232c)',
+            background: 'var(--cc-surface, #0f0f13)',
+            color: 'var(--cc-text, #ececf2)',
             fontSize: '12px',
             fontWeight: 500,
             flex: 'none',
@@ -376,12 +377,12 @@ export const ExecutionTimeline = ({
           style={{
             marginTop: '8px',
             paddingTop: '6px',
-            borderTop: '1px dashed #D9CFC7',
+            borderTop: '1px dashed var(--cc-border, #23232c)',
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
             fontSize: '11px',
-            color: '#927D91'
+            color: '#a78bfa'
           }}
         >
           <span style={{ fontWeight: 600 }}>⚡ Asynchronous Event Flow:</span>

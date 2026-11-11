@@ -1547,40 +1547,40 @@
    ========================================================================== */
 
 .repository-cities-page {
-  min-height: 100vh;
+  min-height: 100%;
   width: 100%;
-  background: #F9F8F6;
-  color: #39332E;
-  padding: 36px 48px;
+  background: var(--cc-bg, #09090c);
+  color: var(--cc-text, #ececf2);
+  padding: 32px 36px;
   box-sizing: border-box;
   overflow-y: auto;
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--f, 'Geist', -apple-system, BlinkMacSystemFont, sans-serif);
 }
 
 .cities-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 28px;
-  border-bottom: 1px solid #D9CFC7;
-  padding-bottom: 22px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--cc-border, #23232c);
+  padding-bottom: 20px;
   gap: 20px;
 }
 
 .cities-main-title {
-  font-size: 26px;
-  font-weight: 800;
+  font-size: 24px;
+  font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0 0 6px 0;
-  color: #39332E;
+  color: var(--cc-text, #ececf2);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .cities-subtitle {
-  font-size: 13.5px;
-  color: #62574E;
+  font-size: 13px;
+  color: var(--cc-text-muted, #8b8b9a);
   margin: 0;
   line-height: 1.5;
   max-width: 650px;
@@ -1592,9 +1592,9 @@
   gap: 8px;
   padding: 8px 16px;
   border-radius: 8px;
-  background: #FFFFFF;
-  border: 1px solid #D9CFC7;
-  color: #39332E;
+  background: var(--cc-surface, #0f0f13);
+  border: 1px solid var(--cc-border, #23232c);
+  color: var(--cc-text, #ececf2);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -1602,9 +1602,9 @@
   flex-shrink: 0;
 }
 .btn-refresh-cities:hover {
-  background: #1d2538;
-  border-color: #C09A62;
-  color: #ffffff;
+  background: var(--cc-surface-2, #15151b);
+  border-color: var(--cc-accent, #6d8cff);
+  color: var(--cc-accent, #6d8cff);
 }
 
 /* Toolbar & Quick Filters */
@@ -1621,35 +1621,35 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #FFFFFF;
-  border: 1px solid #D9CFC7;
+  background: var(--cc-surface, #0f0f13);
+  border: 1px solid var(--cc-border, #23232c);
   border-radius: 8px;
   padding: 8px 14px;
   width: 320px;
   transition: border-color 0.2s;
 }
 .cities-search-bar:focus-within {
-  border-color: #C09A62;
-  box-shadow: 0 0 10px rgba(46, 242, 197, 0.2);
+  border-color: var(--cc-accent, #6d8cff);
+  box-shadow: 0 0 10px rgba(109, 140, 255, 0.2);
 }
 .cities-search-input {
   background: transparent;
   border: none;
   outline: none;
-  color: #39332E;
+  color: var(--cc-text, #ececf2);
   font-size: 13px;
   width: 100%;
 }
 .cities-search-input::placeholder {
-  color: #81776F;
+  color: var(--cc-text-muted, #8b8b9a);
 }
 
 .cities-filter-tabs {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #FFFFFF;
-  border: 1px solid #D9CFC7;
+  background: var(--cc-surface, #0f0f13);
+  border: 1px solid var(--cc-border, #23232c);
   border-radius: 8px;
   padding: 3px;
 }
@@ -1660,17 +1660,17 @@
   padding: 5px 12px;
   font-size: 12px;
   font-weight: 600;
-  color: #62574E;
+  color: var(--cc-text-muted, #8b8b9a);
   cursor: pointer;
   transition: all 0.15s;
 }
 .filter-tab-btn.active {
-  background: #C09A62;
-  color: #0f131c;
+  background: var(--cc-accent, #6d8cff);
+  color: #ffffff;
 }
 .filter-tab-btn:hover:not(.active) {
-  color: #39332E;
-  background: #1c2438;
+  color: var(--cc-text, #ececf2);
+  background: var(--cc-surface-2, #15151b);
 }
 
 .cities-summary-stats {
@@ -1678,7 +1678,7 @@
   align-items: center;
   gap: 16px;
   font-size: 12px;
-  color: #81776F;
+  color: var(--cc-text-muted, #8b8b9a);
 }
 
 /* Repository City Cards Grid */
@@ -1689,8 +1689,8 @@
 }
 
 .city-card {
-  background: #FFFFFF;
-  border: 1px solid #D9CFC7;
+  background: var(--cc-surface, #0f0f13);
+  border: 1px solid var(--cc-border, #23232c);
   border-radius: 12px;
   padding: 20px;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1702,8 +1702,8 @@
   overflow: hidden;
 }
 .city-card:hover {
-  border-color: #C09A62;
-  box-shadow: 0 8px 30px rgba(46, 242, 197, 0.12);
+  border-color: var(--cc-accent, #6d8cff);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
   transform: translateY(-2px);
 }
 
@@ -1718,8 +1718,8 @@
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  background: #1a2236;
-  border: 1px solid #2b354d;
+  background: var(--cc-surface-2, #15151b);
+  border: 1px solid var(--cc-border, #23232c);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1729,14 +1729,18 @@
 .city-repo-name {
   font-size: 15px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--cc-text, #ececf2);
   margin: 0 0 3px 0;
+  transition: color 0.15s;
+}
+.city-card:hover .city-repo-name {
+  color: var(--cc-accent, #6d8cff);
 }
 
 .monorepo-tag {
-  background: rgba(139, 92, 246, 0.2);
-  border: 1px solid rgba(139, 92, 246, 0.4);
-  color: #c4b5fd;
+  background: rgba(139, 92, 246, 0.18);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  color: #a78bfa;
   font-size: 9.5px;
   font-weight: 700;
   padding: 1px 5px;
@@ -1746,22 +1750,22 @@
 }
 
 .commit-tag {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--m, 'Geist Mono', monospace);
   font-size: 11px;
   padding: 3px 8px;
   border-radius: 6px;
-  background: #1a2133;
-  border: 1px solid #2c3650;
-  color: #62574E;
+  background: var(--cc-surface-2, #15151b);
+  border: 1px solid var(--cc-border, #23232c);
+  color: var(--cc-text-muted, #8b8b9a);
   flex-shrink: 0;
 }
 
 /* City Architectural Preview / Metaphor Skyline */
 .city-skyline-preview {
   height: 82px;
-  background: #0c101a;
+  background: var(--cc-surface-3, #1b1b23);
   border-radius: 8px;
-  border: 1px solid #1a2133;
+  border: 1px solid var(--cc-border, #23232c);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -1783,7 +1787,7 @@
 .skyline-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(12, 16, 26, 0.2) 0%, rgba(12, 16, 26, 0.88) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.65) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1793,9 +1797,9 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #62574E;
-  background: #FFFFFF;
-  border: 1px solid #26314a;
+  color: var(--cc-text, #ececf2);
+  background: var(--cc-surface, #0f0f13);
+  border: 1px solid var(--cc-border, #23232c);
   padding: 4px 10px;
   border-radius: 20px;
 }
@@ -1805,8 +1809,8 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  background: #0e121e;
-  border: 1px solid #1e263a;
+  background: var(--cc-surface-2, #15151b);
+  border: 1px solid var(--cc-border, #23232c);
   border-radius: 8px;
   padding: 9px 8px;
 }
@@ -1819,11 +1823,12 @@
 .stat-val {
   font-size: 15px;
   font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--m, 'Geist Mono', monospace);
+  color: var(--cc-text, #ececf2);
 }
 .stat-lbl {
   font-size: 10.5px;
-  color: #81776F;
+  color: var(--cc-text-muted, #8b8b9a);
   margin-top: 2px;
   font-weight: 500;
 }
@@ -1835,7 +1840,7 @@
   justify-content: space-between;
   margin-top: auto;
   padding-top: 8px;
-  border-top: 1px solid #1c2336;
+  border-top: 1px solid var(--cc-border, #23232c);
 }
 
 .btn-enter-city {
@@ -1844,8 +1849,8 @@
   gap: 6px;
   padding: 8px 16px;
   border-radius: 8px;
-  background: #C09A62;
-  color: #0f131c;
+  background: var(--cc-accent, #6d8cff);
+  color: #ffffff;
   font-size: 12.5px;
   font-weight: 700;
   border: none;
@@ -1853,8 +1858,8 @@
   transition: all 0.15s ease;
 }
 .btn-enter-city:hover {
-  background: #5ef8d4;
-  box-shadow: 0 0 16px rgba(46, 242, 197, 0.45);
+  filter: brightness(1.1);
+  box-shadow: 0 0 16px rgba(109, 140, 255, 0.4);
   transform: translateX(1px);
 }
 
@@ -1866,18 +1871,18 @@
   gap: 8px;
   padding: 9px 16px;
   border-radius: 8px;
-  background: #1d2538;
-  border: 1px solid #33405f;
-  color: #39332E;
+  background: var(--cc-surface-2, #15151b);
+  border: 1px solid var(--cc-border, #23232c);
+  color: var(--cc-text, #ececf2);
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
 }
 .btn-build-city:hover:not(:disabled) {
-  background: #25304a;
-  border-color: #C09A62;
-  color: #ffffff;
+  background: var(--cc-surface-3, #1b1b23);
+  border-color: var(--cc-accent, #6d8cff);
+  color: var(--cc-accent, #6d8cff);
 }
 .btn-build-city:disabled {
   opacity: 0.6;
@@ -1886,26 +1891,28 @@
 
 /* Loading & Error States */
 .city-page-loading {
-  min-height: 100vh;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #F9F8F6;
+  background: var(--cc-bg, #09090c);
+  color: var(--cc-text, #ececf2);
 }
 .city-page-error {
-  min-height: 100vh;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #F9F8F6;
+  background: var(--cc-bg, #09090c);
   text-align: center;
+  color: var(--cc-text, #ececf2);
 }
 .btn-retry {
   padding: 8px 16px;
-  background: #C09A62;
-  color: #0f131c;
+  background: var(--cc-accent, #6d8cff);
+  color: #ffffff;
   font-weight: 600;
   border-radius: 6px;
   border: none;

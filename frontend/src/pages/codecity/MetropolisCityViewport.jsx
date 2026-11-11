@@ -677,273 +677,175 @@ export const MetropolisCityViewport = ({
 
   return (
     <div
-      ref={containerRef}
+      className="metropolis-viewport-root"
       style={{
         position: 'relative',
         width: '100%',
         height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         userSelect: 'none',
         overflow: 'hidden',
-        background: '#F9F8F6',
-        cursor: isDragging ? 'grabbing' : (isSpacePressed ? 'grab' : 'default')
+        background: cityTheme.bg
       }}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
     >
       {/* =================================================================== */}
-      {/* TOP BAR: BREADCRUMBS & 5-LEVEL CONTINUOUS ZOOM SWITCHER            */}
+      {/* DOCKED SUB-TOOLBAR: BREADCRUMBS, DISTRICTS, OVERLAYS & LEVEL ZOOM  */}
       {/* =================================================================== */}
       <div
+        className="metropolis-docked-toolbar"
         style={{
-          position: 'absolute',
-          top: '12px',
-          left: '16px',
-          right: '16px',
-          zIndex: 40,
+          height: '42px',
+          flexShrink: 0,
+          background: cityTheme.hudBg,
+          backdropFilter: 'blur(10px)',
+          borderBottom: `1px solid ${cityTheme.hudBorder}`,
           display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          pointerEvents: 'none'
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 16px',
+          gap: '12px',
+          zIndex: 25,
+          fontSize: '12px',
+          color: cityTheme.hudText,
+          overflowX: 'auto',
+          scrollbarWidth: 'none'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-          {/* Breadcrumb Trail (Accurate, Non-leaking) */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: cityTheme.hudBg,
-              backdropFilter: 'blur(10px)',
-              border: `1px solid ${cityTheme.hudBorder}`,
-              borderRadius: '8px',
-              padding: '6px 14px',
-              boxShadow: isDark ? '0 4px 16px rgba(0, 0, 0, 0.4)' : '0 4px 16px rgba(18, 20, 26, 0.06)',
-              pointerEvents: 'auto',
-              fontSize: '12px'
+        {/* LEFT: Interactive Breadcrumbs Trail */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flexShrink: 1 }}>
+          <button
+            onClick={() => {
+              fitView();
+              handleSelectEntityInternal({ type: 'REPOSITORY', name: cityData?.repositoryName || 'Repository', data: cityData, id: cityData?.repositoryId });
             }}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: isDark ? 'var(--cc-cyan, #38bdf8)' : 'var(--a, #3552d6)',
+              fontWeight: 700,
+              cursor: 'pointer',
+              padding: 0,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              whiteSpace: 'nowrap'
+            }}
+            title={`Entire repository: ${cityData?.repositoryName || 'Metropolis'}`}
           >
-            <button
-              onClick={() => {
-                fitView();
-                handleSelectEntityInternal({ type: 'REPOSITORY', name: cityData?.repositoryName || 'Repository', data: cityData, id: cityData?.repositoryId });
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: isDark ? 'var(--cc-cyan, #38bdf8)' : 'var(--a, #3552d6)',
-                fontWeight: 700,
-                cursor: 'pointer',
-                padding: 0,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px'
-              }}
-              title={`Entire repository: ${cityData?.repositoryName || 'Metropolis'}`}
-            >
-              <span>🌆</span>
-              <span>{cityData?.repositoryName || 'Metropolis'}</span>
-            </button>
-            {currentDistrict && (
-              <>
-                <ChevronRight size={13} style={{ color: cityTheme.hudMuted }} />
-                <button
-                  onClick={() => {
-                    setSelectedDistrictFilter(currentDistrict.id);
-                    flyTo(currentDistrict.x + currentDistrict.width / 2, currentDistrict.y + currentDistrict.height / 2, 0.85);
-                    handleSelectEntityInternal({ type: 'DISTRICT', name: currentDistrict.name, data: currentDistrict, id: currentDistrict.id });
-                  }}
-                  style={{ background: 'none', border: 'none', color: cityTheme.hudText, fontWeight: 600, cursor: 'pointer', padding: 0 }}
-                  title={`District: ${currentDistrict.name}`}
-                >
-                  📍 {truncate(currentDistrict.name, 22)}
-                </button>
-              </>
-            )}
-            {currentBlock && (
-              <>
-                <ChevronRight size={13} style={{ color: cityTheme.hudMuted }} />
-                <button
-                  onClick={() => {
-                    flyTo(currentBlock.x + currentBlock.width / 2, currentBlock.y + currentBlock.height / 2, 1.2);
-                    handleSelectEntityInternal({ type: 'BLOCK', name: currentBlock.name, data: currentBlock, id: currentBlock.id });
-                  }}
-                  style={{ background: 'none', border: 'none', color: cityTheme.hudMuted, fontWeight: 500, cursor: 'pointer', padding: 0 }}
-                  title={`Neighbourhood: ${currentBlock.name}`}
-                >
-                  🏘️ {truncate(currentBlock.name, 20)}
-                </button>
-              </>
-            )}
-            {currentActiveBuilding && (
-              <>
-                <ChevronRight size={13} style={{ color: cityTheme.hudMuted }} />
-                <button
-                  onClick={() => {
-                    onSelectBuilding(currentActiveBuilding);
-                    flyTo(currentActiveBuilding.x + currentActiveBuilding.width / 2, currentActiveBuilding.y + currentActiveBuilding.height / 2, 1.6);
-                    handleSelectEntityInternal({ type: 'BUILDING', name: currentActiveBuilding.name, data: currentActiveBuilding, id: currentActiveBuilding.id });
-                  }}
-                  style={{ background: 'none', border: 'none', color: isDark ? 'var(--wa, #f5b942)' : '#a86a00', fontWeight: 600, cursor: 'pointer', padding: 0 }}
-                  title={`Building: ${currentActiveBuilding.fileName || currentActiveBuilding.name}`}
-                >
-                  🏢 {truncate(currentActiveBuilding.fileName || currentActiveBuilding.name, 22)}
-                </button>
-              </>
-            )}
-            {selectedEntity && (
-              <>
-                <ChevronRight size={13} style={{ color: cityTheme.hudMuted }} />
-                <span style={{ color: isDark ? 'var(--cc-cyan, #38bdf8)' : 'var(--cy, #0278b8)', fontWeight: 600 }}>
-                  🔍 {truncate(selectedEntity.name || selectedEntity.type, 18)}
-                </span>
-              </>
-            )}
-          </div>
+            <span>🌆</span>
+            <span>{truncate(cityData?.repositoryName || 'Metropolis', 22)}</span>
+          </button>
 
-          {/* Impact Analysis Active Banner */}
-          {impactMode?.active && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                background: 'rgba(239, 233, 227, 0.96)',
-                border: '1px solid #B58A4A',
-                borderRadius: '8px',
-                padding: '6px 14px',
-                boxShadow: '0 4px 20px rgba(181, 138, 74, 0.15)',
-                pointerEvents: 'auto',
-                fontSize: '12px'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ color: '#B58A4A', fontWeight: 700 }}>⚡ Impact Mode:</span>
-                <span style={{ color: '#39332E', fontWeight: 600 }}>{truncate(impactMode.targetName, 18)}</span>
-                <span style={{ color: '#81776F' }}>•</span>
-                <span style={{ color: '#64836B', fontWeight: 600 }}>{impactMode.upstreamIds?.size || 0} Upstream</span>
-                <span style={{ color: '#81776F' }}>•</span>
-                <span style={{ color: '#B7655D', fontWeight: 600 }}>{impactMode.downstreamIds?.size || 0} Downstream</span>
-              </div>
+          {currentDistrict && (
+            <>
+              <ChevronRight size={13} style={{ color: cityTheme.hudMuted, flexShrink: 0 }} />
               <button
-                onClick={onClearImpactMode}
-                style={{
-                  background: 'rgba(181, 138, 74, 0.15)',
-                  border: '1px solid rgba(181, 138, 74, 0.4)',
-                  color: '#B58A4A',
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
+                onClick={() => {
+                  setSelectedDistrictFilter(currentDistrict.id);
+                  flyTo(currentDistrict.x + currentDistrict.width / 2, currentDistrict.y + currentDistrict.height / 2, 0.85);
+                  handleSelectEntityInternal({ type: 'DISTRICT', name: currentDistrict.name, data: currentDistrict, id: currentDistrict.id });
                 }}
+                style={{ background: 'none', border: 'none', color: cityTheme.hudText, fontWeight: 600, cursor: 'pointer', padding: 0, whiteSpace: 'nowrap' }}
+                title={`District: ${currentDistrict.name}`}
               >
-                Exit Impact Mode
+                📍 {truncate(currentDistrict.name, 18)}
               </button>
-            </div>
+            </>
           )}
 
-          {/* Right: 5-Level Continuous Zoom Pills & Canvas Control */}
-          <div
+          {currentBlock && (
+            <>
+              <ChevronRight size={13} style={{ color: cityTheme.hudMuted, flexShrink: 0 }} />
+              <button
+                onClick={() => {
+                  flyTo(currentBlock.x + currentBlock.width / 2, currentBlock.y + currentBlock.height / 2, 1.2);
+                  handleSelectEntityInternal({ type: 'BLOCK', name: currentBlock.name, data: currentBlock, id: currentBlock.id });
+                }}
+                style={{ background: 'none', border: 'none', color: cityTheme.hudMuted, fontWeight: 500, cursor: 'pointer', padding: 0, whiteSpace: 'nowrap' }}
+                title={`Neighbourhood: ${currentBlock.name}`}
+              >
+                🏘️ {truncate(currentBlock.name, 16)}
+              </button>
+            </>
+          )}
+
+          {currentActiveBuilding && (
+            <>
+              <ChevronRight size={13} style={{ color: cityTheme.hudMuted, flexShrink: 0 }} />
+              <button
+                onClick={() => {
+                  onSelectBuilding(currentActiveBuilding);
+                  flyTo(currentActiveBuilding.x + currentActiveBuilding.width / 2, currentActiveBuilding.y + currentActiveBuilding.height / 2, 1.6);
+                  handleSelectEntityInternal({ type: 'BUILDING', name: currentActiveBuilding.name, data: currentActiveBuilding, id: currentActiveBuilding.id });
+                }}
+                style={{ background: 'none', border: 'none', color: isDark ? 'var(--wa, #f5b942)' : '#a86a00', fontWeight: 600, cursor: 'pointer', padding: 0, whiteSpace: 'nowrap' }}
+                title={`Building: ${currentActiveBuilding.fileName || currentActiveBuilding.name}`}
+              >
+                🏢 {truncate(currentActiveBuilding.fileName || currentActiveBuilding.name, 18)}
+              </button>
+            </>
+          )}
+
+          {selectedEntity && (
+            <>
+              <ChevronRight size={13} style={{ color: cityTheme.hudMuted, flexShrink: 0 }} />
+              <span style={{ color: isDark ? 'var(--cc-cyan, #38bdf8)' : 'var(--cy, #0278b8)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                🔍 {truncate(selectedEntity.name || selectedEntity.type, 16)}
+              </span>
+            </>
+          )}
+
+          <div style={{ width: '1px', height: '16px', background: cityTheme.hudBorder, margin: '0 6px', flexShrink: 0 }} />
+
+          {/* District Selector Filter */}
+          <select
+            value={selectedDistrictFilter}
+            onChange={(e) => {
+              setSelectedDistrictFilter(e.target.value);
+              if (e.target.value !== 'ALL') {
+                const dist = (cityData?.districts || []).find(d => d.id === e.target.value);
+                if (dist) flyTo(dist.x + dist.width / 2, dist.y + dist.height / 2, 0.9);
+              } else {
+                fitView();
+              }
+            }}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              background: cityTheme.hudBg,
-              backdropFilter: 'blur(10px)',
+              background: 'transparent',
               border: `1px solid ${cityTheme.hudBorder}`,
-              borderRadius: '8px',
-              padding: '4px 6px',
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)',
-              pointerEvents: 'auto'
+              color: cityTheme.hudText,
+              borderRadius: '6px',
+              padding: '3px 8px',
+              fontSize: '11px',
+              fontWeight: 600,
+              outline: 'none',
+              cursor: 'pointer',
+              flexShrink: 0
             }}
           >
-            {[
-              { id: 1, label: '1 · Metropolis' },
-              { id: 2, label: '2 · District' },
-              { id: 3, label: '3 · Block' },
-              { id: 4, label: '4 · Building' },
-              { id: 5, label: '5 · Room' }
-            ].map(lvl => (
-              <button
-                key={lvl.id}
-                onClick={() => setLevelZoom(lvl.id)}
-                style={{
-                  padding: '4px 8px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  background: zoomLevel.id === lvl.id ? (isDark ? 'var(--cc-accent, #6d8cff)' : 'var(--cc-border-2, #cdd2dd)') : 'transparent',
-                  color: zoomLevel.id === lvl.id ? (isDark ? '#ffffff' : '#12141a') : cityTheme.hudMuted,
-                  fontSize: '11px',
-                  fontWeight: zoomLevel.id === lvl.id ? 700 : 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                {lvl.label}
-              </button>
+            <option value="ALL">🌆 All Districts</option>
+            {(cityData?.districts || []).map(d => (
+              <option key={d.id} value={d.id}>📍 {truncate(d.name, 20)} ({d.buildingCount})</option>
             ))}
+          </select>
 
-            <div style={{ width: '1px', height: '16px', background: cityTheme.hudBorder, margin: '0 4px' }} />
-
-            <span style={{ fontSize: '11px', color: cityTheme.hudMuted, fontWeight: 600, padding: '0 4px' }}>
-              {Math.round(zoom * 100)}%
-            </span>
-
-            <button
-              onClick={() => setZoom(z => Math.min(z * 1.25, 3.5))}
-              title="Zoom In"
-              style={{ background: 'transparent', border: 'none', color: cityTheme.hudMuted, padding: '4px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
-            >
-              <ZoomIn size={13} />
-            </button>
-            <button
-              onClick={() => setZoom(z => Math.max(z * 0.8, 0.22))}
-              title="Zoom Out"
-              style={{ background: 'transparent', border: 'none', color: cityTheme.hudMuted, padding: '4px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
-            >
-              <ZoomOut size={13} />
-            </button>
-            <button
-              onClick={fitView}
-              title="Fit Metropolis into Canvas"
-              style={{ background: 'transparent', border: 'none', color: isDark ? '#38bdf8' : '#0278b8', padding: '4px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
-            >
-              <Compass size={13} />
-            </button>
-            <button
-              onClick={toggleFullscreen}
-              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-              style={{ background: 'transparent', border: 'none', color: isDark ? '#38bdf8' : '#0278b8', padding: '4px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
-            >
-              {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-            </button>
-          </div>
-        </div>
-
-        {/* SECOND HUD ROW: Search, District Filter, and Semantic Overlay Filter Pills */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', pointerEvents: 'auto' }}>
-          {/* Search Box */}
-          <div style={{ position: 'relative', width: '240px' }}>
+          {/* Search Box in Sub-bar */}
+          <div style={{ position: 'relative', width: '180px', flexShrink: 0 }}>
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                background: cityTheme.hudBg,
-                backdropFilter: 'blur(10px)',
+                background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
                 border: `1px solid ${cityTheme.hudBorder}`,
-                borderRadius: '8px',
-                padding: '5px 10px',
-                boxShadow: isDark ? '0 4px 16px rgba(0, 0, 0, 0.4)' : '0 4px 16px rgba(18, 20, 26, 0.06)',
+                borderRadius: '6px',
+                padding: '3px 8px',
                 color: cityTheme.hudText
               }}
             >
-              <Search size={13} style={{ color: cityTheme.hudMuted, marginRight: '6px', flexShrink: 0 }} />
+              <Search size={12} style={{ color: cityTheme.hudMuted, marginRight: '6px', flexShrink: 0 }} />
               <input
                 type="text"
-                placeholder="Search file, class, method..."
+                placeholder="Find in city..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
@@ -952,14 +854,14 @@ export const MetropolisCityViewport = ({
                   outline: 'none',
                   color: cityTheme.hudText,
                   width: '100%',
-                  fontSize: '11.5px',
+                  fontSize: '11px',
                   fontFamily: 'inherit'
                 }}
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  style={{ background: 'none', border: 'none', color: cityTheme.hudMuted, cursor: 'pointer', fontSize: '12px' }}
+                  style={{ background: 'none', border: 'none', color: cityTheme.hudMuted, cursor: 'pointer', fontSize: '11px', padding: 0 }}
                 >
                   ✕
                 </button>
@@ -973,7 +875,7 @@ export const MetropolisCityViewport = ({
                   position: 'absolute',
                   top: 'calc(100% + 4px)',
                   left: 0,
-                  width: '300px',
+                  width: '280px',
                   background: cityTheme.hudBg,
                   backdropFilter: 'blur(10px)',
                   border: `1px solid ${cityTheme.hudBorder}`,
@@ -981,7 +883,7 @@ export const MetropolisCityViewport = ({
                   boxShadow: isDark ? '0 8px 24px rgba(0, 0, 0, 0.6)' : '0 8px 24px rgba(18, 20, 26, 0.12)',
                   padding: '4px 0',
                   zIndex: 50,
-                  fontSize: '11.5px',
+                  fontSize: '11px',
                   maxHeight: '260px',
                   overflowY: 'auto'
                 }}
@@ -1012,7 +914,7 @@ export const MetropolisCityViewport = ({
                       setSearchQuery('');
                     }}
                     style={{
-                      padding: '7px 10px',
+                      padding: '6px 10px',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -1025,10 +927,10 @@ export const MetropolisCityViewport = ({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
                       <span
                         style={{
-                          fontSize: '9px',
+                          fontSize: '8.5px',
                           fontWeight: 700,
-                          padding: '1px 5px',
-                          borderRadius: '4px',
+                          padding: '1px 4px',
+                          borderRadius: '3px',
                           background: isDark ? '#1a1a23' : '#eef1f6',
                           color: '#38bdf8'
                         }}
@@ -1036,125 +938,231 @@ export const MetropolisCityViewport = ({
                         {res.type}
                       </span>
                       <span style={{ fontWeight: 600, color: cityTheme.hudText, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {truncate(res.name, 24)}
+                        {truncate(res.name, 22)}
                       </span>
                     </div>
-                    <span style={{ fontSize: '9.5px', color: cityTheme.hudMuted, marginLeft: '6px', flexShrink: 0 }}>
-                      {truncate(res.district, 14)}
+                    <span style={{ fontSize: '9px', color: cityTheme.hudMuted, marginLeft: '6px', flexShrink: 0 }}>
+                      {truncate(res.district, 12)}
                     </span>
                   </div>
                 ))}
               </div>
             )}
           </div>
+        </div>
 
-          {/* District Selector Filter */}
-          <select
-            value={selectedDistrictFilter}
-            onChange={(e) => {
-              setSelectedDistrictFilter(e.target.value);
-              if (e.target.value !== 'ALL') {
-                const dist = (cityData?.districts || []).find(d => d.id === e.target.value);
-                if (dist) flyTo(dist.x + dist.width / 2, dist.y + dist.height / 2, 0.9);
-              } else {
-                fitView();
-              }
-            }}
-            style={{
-              background: cityTheme.hudBg,
-              backdropFilter: 'blur(10px)',
-              border: `1px solid ${cityTheme.hudBorder}`,
-              color: cityTheme.hudText,
-              borderRadius: '8px',
-              padding: '5px 10px',
-              fontSize: '11.5px',
-              fontWeight: 600,
-              outline: 'none',
-              cursor: 'pointer',
-              boxShadow: isDark ? '0 4px 16px rgba(0, 0, 0, 0.4)' : '0 4px 16px rgba(18, 20, 26, 0.06)'
-            }}
-          >
-            <option value="ALL">🌆 Entire Metropolis</option>
-            {(cityData?.districts || []).map(d => (
-              <option key={d.id} value={d.id}>📍 {truncate(d.name, 22)} ({d.buildingCount})</option>
-            ))}
-          </select>
-
-          {/* Semantic Overlay Filter Pills (The 8 Symbol Design System V1 Overlays) */}
+        {/* RIGHT: Semantic Overlays & 5-Level Continuous Zoom Switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          {/* Overlays Pill Group */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '4px',
-              background: cityTheme.hudBg,
-              backdropFilter: 'blur(10px)',
+              gap: '3px',
+              background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
               border: `1px solid ${cityTheme.hudBorder}`,
-              borderRadius: '8px',
-              padding: '3px 6px',
-              boxShadow: isDark ? '0 4px 16px rgba(0, 0, 0, 0.4)' : '0 4px 16px rgba(18, 20, 26, 0.06)'
+              borderRadius: '6px',
+              padding: '2px 4px'
             }}
           >
-            <span style={{ fontSize: '10.5px', color: cityTheme.hudMuted, fontWeight: 600, marginRight: '2px' }}>
+            <span style={{ fontSize: '10px', color: cityTheme.hudMuted, fontWeight: 600, padding: '0 3px' }}>
               Overlays:
             </span>
-
             {[
               { key: 'CALLS', label: 'Calls', color: '#587C78' },
               { key: 'PERSISTS_TO', label: 'DB', color: '#8D916B' },
               { key: 'EXTERNAL_CALL', label: 'Ext', color: '#B77C61' },
-              { key: 'EVENT_ASYNC', label: 'Async', color: '#927D91' },
-              { key: 'EXTENDS', label: 'Extends', color: '#71869B' },
-              { key: 'IMPLEMENTS', label: 'Impl', color: '#71869B' },
-              { key: 'DEPENDS_ON', label: 'DI', color: '#71869B' }
+              { key: 'EVENT_ASYNC', label: 'Async', color: '#927D91' }
             ].map(ov => (
               <button
                 key={ov.key}
                 onClick={() => toggleOverlay(ov.key)}
                 style={{
-                  display: 'flex',
+                  display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '4px',
-                  padding: '3px 7px',
-                  borderRadius: '5px',
+                  gap: '3px',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
                   border: '1px solid',
-                  borderColor: overlayFilters[ov.key] ? ov.color : cityTheme.hudBorder,
+                  borderColor: overlayFilters[ov.key] ? ov.color : 'transparent',
                   background: overlayFilters[ov.key] ? (isDark ? 'rgba(56, 189, 248, 0.12)' : 'rgba(56, 189, 248, 0.08)') : 'transparent',
                   color: overlayFilters[ov.key] ? ov.color : cityTheme.hudMuted,
-                  fontSize: '10.5px',
+                  fontSize: '10px',
                   fontWeight: 600,
                   cursor: 'pointer'
                 }}
               >
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: ov.color }} />
+                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: ov.color }} />
                 {ov.label}
               </button>
             ))}
-
-            <div style={{ width: '1px', height: '14px', background: cityTheme.hudBorder, margin: '0 2px' }} />
 
             <button
               onClick={() => setForceCutaway(!forceCutaway)}
               title="Force interior cutaways (Rooms and Workstations)"
               style={{
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                gap: '4px',
-                padding: '3px 7px',
-                borderRadius: '5px',
+                gap: '3px',
+                padding: '2px 6px',
+                borderRadius: '4px',
                 border: '1px solid',
-                borderColor: forceCutaway ? '#C09A62' : cityTheme.hudBorder,
+                borderColor: forceCutaway ? '#C09A62' : 'transparent',
                 background: forceCutaway ? (isDark ? 'rgba(192, 154, 98, 0.18)' : 'rgba(192, 154, 98, 0.15)') : 'transparent',
                 color: forceCutaway ? '#C09A62' : cityTheme.hudMuted,
-                fontSize: '10.5px',
+                fontSize: '10px',
                 fontWeight: 600,
                 cursor: 'pointer'
               }}
             >
-              <Eye size={11} /> Cutaway
+              <Eye size={10} /> Cutaway
+            </button>
+          </div>
+
+          {/* 5-Level Continuous Zoom Switcher */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2px',
+              background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+              border: `1px solid ${cityTheme.hudBorder}`,
+              borderRadius: '6px',
+              padding: '2px 4px'
+            }}
+          >
+            {[
+              { id: 1, label: '1 · Metro' },
+              { id: 2, label: '2 · Dist' },
+              { id: 3, label: '3 · Block' },
+              { id: 4, label: '4 · Build' },
+              { id: 5, label: '5 · Room' }
+            ].map(lvl => (
+              <button
+                key={lvl.id}
+                onClick={() => setLevelZoom(lvl.id)}
+                style={{
+                  padding: '3px 6px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: zoomLevel.id === lvl.id ? (isDark ? 'var(--cc-accent, #6d8cff)' : 'var(--cc-border-2, #cdd2dd)') : 'transparent',
+                  color: zoomLevel.id === lvl.id ? (isDark ? '#ffffff' : '#12141a') : cityTheme.hudMuted,
+                  fontSize: '10.5px',
+                  fontWeight: zoomLevel.id === lvl.id ? 700 : 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {lvl.label}
+              </button>
+            ))}
+
+            <div style={{ width: '1px', height: '14px', background: cityTheme.hudBorder, margin: '0 3px' }} />
+
+            <span style={{ fontSize: '10.5px', color: cityTheme.hudMuted, fontWeight: 600, padding: '0 2px' }}>
+              {Math.round(zoom * 100)}%
+            </span>
+
+            <button
+              onClick={() => setZoom(z => Math.min(z * 1.25, 3.5))}
+              title="Zoom In"
+              style={{ background: 'transparent', border: 'none', color: cityTheme.hudMuted, padding: '3px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
+            >
+              <ZoomIn size={12} />
+            </button>
+            <button
+              onClick={() => setZoom(z => Math.max(z * 0.8, 0.22))}
+              title="Zoom Out"
+              style={{ background: 'transparent', border: 'none', color: cityTheme.hudMuted, padding: '3px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
+            >
+              <ZoomOut size={12} />
+            </button>
+            <button
+              onClick={fitView}
+              title="Fit Metropolis into Canvas"
+              style={{ background: 'transparent', border: 'none', color: isDark ? '#38bdf8' : '#0278b8', padding: '3px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
+            >
+              <Compass size={12} />
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              style={{ background: 'transparent', border: 'none', color: isDark ? '#38bdf8' : '#0278b8', padding: '3px', cursor: 'pointer', borderRadius: '4px', display: 'flex' }}
+            >
+              {isFullscreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
             </button>
           </div>
         </div>
       </div>
+
+      {/* =================================================================== */}
+      {/* 2D METROPOLIS SVG CANVAS CONTAINER (Strictly Bounded)               */}
+      {/* =================================================================== */}
+      <div
+        ref={containerRef}
+        className="metropolis-canvas-container"
+        style={{
+          flex: 1,
+          minWidth: 0,
+          minHeight: 0,
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
+          background: cityTheme.bg,
+          cursor: isDragging ? 'grabbing' : (isSpacePressed ? 'grab' : 'default')
+        }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+      >
+        {/* Impact Analysis Active Banner (Floating Pill) */}
+        {impactMode?.active && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '12px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 35,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              background: cityTheme.hudBg,
+              backdropFilter: 'blur(10px)',
+              border: '1px solid #B58A4A',
+              borderRadius: '8px',
+              padding: '6px 14px',
+              boxShadow: '0 4px 20px rgba(181, 138, 74, 0.2)',
+              fontSize: '12px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ color: '#B58A4A', fontWeight: 700 }}>⚡ Impact Mode:</span>
+              <span style={{ color: cityTheme.hudText, fontWeight: 600 }}>{truncate(impactMode.targetName, 18)}</span>
+              <span style={{ color: cityTheme.hudMuted }}>•</span>
+              <span style={{ color: '#64836B', fontWeight: 600 }}>{impactMode.upstreamIds?.size || 0} Upstream</span>
+              <span style={{ color: cityTheme.hudMuted }}>•</span>
+              <span style={{ color: '#B7655D', fontWeight: 600 }}>{impactMode.downstreamIds?.size || 0} Downstream</span>
+            </div>
+            <button
+              onClick={onClearImpactMode}
+              style={{
+                background: 'rgba(181, 138, 74, 0.15)',
+                border: '1px solid rgba(181, 138, 74, 0.4)',
+                color: '#B58A4A',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                fontSize: '11px',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              Exit Impact Mode
+            </button>
+          </div>
+        )}
 
       {/* =================================================================== */}
       {/* 2D METROPOLIS SVG CANVAS (Strict Symbol Design System V1)          */}
@@ -1618,13 +1626,13 @@ export const MetropolisCityViewport = ({
                       width={bldg.width}
                       height={bldg.height}
                       rx={6}
-                      fill="#EFE9E3"
-                      stroke="#D9CFC7"
+                      fill={isDark ? "#1b1b23" : "#EFE9E3"}
+                      stroke={cityTheme.hudBorder}
                       strokeWidth={1.5}
                       strokeDasharray="4 3"
                     />
                     <rect x={0} y={0} width={bldg.width} height={bldg.height} rx={6} fill="url(#unsupported-hatch)" />
-                    <text x={bldg.width / 2} y={bldg.height / 2 + 3} fontFamily="'Inter', sans-serif" fontSize={9.5} fontWeight="600" fill="#39332E" textAnchor="middle">
+                    <text x={bldg.width / 2} y={bldg.height / 2 + 3} fontFamily="'Inter', sans-serif" fontSize={9.5} fontWeight="600" fill={cityTheme.hudText} textAnchor="middle">
                       <title>{bldg.fileName || bldg.name}</title>
                       {truncate(bldg.fileName || bldg.name, maxBldgChars)}
                     </text>
@@ -1729,13 +1737,13 @@ export const MetropolisCityViewport = ({
                                 width={room.width}
                                 height={room.height}
                                 rx={4}
-                                fill="#F9F8F6"
-                                stroke={room.isInterface ? '#927D91' : (room.isAbstract ? '#B77C61' : '#D9CFC7')}
+                                fill={cityTheme.districtFill}
+                                stroke={room.isInterface ? '#927D91' : (room.isAbstract ? '#B77C61' : cityTheme.hudBorder)}
                                 strokeWidth={1}
                                 strokeDasharray={room.isAbstract ? '3 2' : 'none'}
                               />
                               {/* Room Header Label with Tooltip */}
-                              <text x={6} y={10} fontSize={8} fontWeight="700" fill="#39332E" fontFamily="'Inter', sans-serif">
+                              <text x={6} y={10} fontSize={8} fontWeight="700" fill={cityTheme.hudText} fontFamily="'Inter', sans-serif">
                                 <title>{room.qualifiedName || room.name}</title>
                                 {displayRoomName}
                               </text>
@@ -1750,9 +1758,9 @@ export const MetropolisCityViewport = ({
                               {/* Storage Cabinets (Fields) */}
                               {room.cabinetCount > 0 && (
                                 <g transform={`translate(${room.width - 14}, 14)`}>
-                                  <rect x={0} y={0} width={10} height={12} rx={2} fill="#EFE9E3" stroke="#D9CFC7" strokeWidth={0.8} />
-                                  <line x1={2} y1={4} x2={8} y2={4} stroke="#81776F" strokeWidth={0.8} />
-                                  <line x1={2} y1={8} x2={8} y2={8} stroke="#81776F" strokeWidth={0.8} />
+                                  <rect x={0} y={0} width={10} height={12} rx={2} fill={cityTheme.districtHeaderFill} stroke={cityTheme.hudBorder} strokeWidth={0.8} />
+                                  <line x1={2} y1={4} x2={8} y2={4} stroke={cityTheme.hudMuted} strokeWidth={0.8} />
+                                  <line x1={2} y1={8} x2={8} y2={8} stroke={cityTheme.hudMuted} strokeWidth={0.8} />
                                 </g>
                               )}
 
@@ -1772,11 +1780,11 @@ export const MetropolisCityViewport = ({
                                     }}
                                   >
                                     {/* Workstation Desk */}
-                                    <rect x={0} y={0} width={ws.width || 30} height={ws.height || 18} rx={2} fill="#FFFFFF" stroke="#D9CFC7" strokeWidth={0.8} />
+                                    <rect x={0} y={0} width={ws.width || 30} height={ws.height || 18} rx={2} fill={cityTheme.districtFill} stroke={cityTheme.hudBorder} strokeWidth={0.8} />
                                     {/* Monitor Screen */}
                                     <rect x={4} y={3} width={14} height={7} rx={1} fill={ws.isConstructor ? '#71869B' : '#587C78'} />
                                     {/* Method Name with Tooltip */}
-                                    <text x={4} y={15} fontSize={6.5} fontWeight="600" fill="#39332E">
+                                    <text x={4} y={15} fontSize={6.5} fontWeight="600" fill={cityTheme.hudText}>
                                       <title>{ws.signature || ws.name}</title>
                                       {displayWsName}
                                     </text>
@@ -1971,76 +1979,76 @@ export const MetropolisCityViewport = ({
 
           {/* 10. EMBEDDED ROAD TYPES LEGEND (Bottom Left of Canvas) */}
           <g id="city-road-types-legend" transform={`translate(${cityBounds.minX + 30}, ${cityBounds.maxY - 250})`}>
-            <rect x={0} y={0} width={230} height={236} rx={12} fill="rgba(255, 255, 255, 0.95)" stroke="#D9CFC7" strokeWidth={1.5} />
-            <text x={16} y={22} fontFamily="'Inter', sans-serif" fontSize={10.5} fontWeight="700" letterSpacing="0.12em" fill="#39332E">
+            <rect x={0} y={0} width={230} height={236} rx={12} fill={isDark ? "rgba(21, 21, 27, 0.95)" : "rgba(255, 255, 255, 0.95)"} stroke={cityTheme.hudBorder} strokeWidth={1.5} />
+            <text x={16} y={22} fontFamily="'Inter', sans-serif" fontSize={10.5} fontWeight="700" letterSpacing="0.12em" fill={cityTheme.hudText}>
               ROAD & OVERLAY TYPES
             </text>
 
             <path stroke="#C09A62" strokeWidth={3.5} d="M 16 42 H 44" />
-            <text x={54} y={46} fontSize={10.5} fill="#39332E" fontFamily="'Inter', sans-serif">Selected request route</text>
+            <text x={54} y={46} fontSize={10.5} fill={cityTheme.hudText} fontFamily="'Inter', sans-serif">Selected request route</text>
 
             <path stroke="#71869B" strokeWidth={2.5} d="M 16 60 H 44" />
-            <text x={54} y={64} fontSize={10.5} fill="#39332E" fontFamily="'Inter', sans-serif">1. Method call (arrow = dir)</text>
+            <text x={54} y={64} fontSize={10.5} fill={cityTheme.hudText} fontFamily="'Inter', sans-serif">1. Method call (arrow = dir)</text>
 
             <path stroke="#8D916B" strokeWidth={3} d="M 16 78 H 44" />
-            <text x={54} y={82} fontSize={10.5} fill="#39332E" fontFamily="'Inter', sans-serif">2. Database operation</text>
+            <text x={54} y={82} fontSize={10.5} fill={cityTheme.hudText} fontFamily="'Inter', sans-serif">2. Database operation</text>
 
             <path stroke="#B77C61" strokeWidth={2.5} strokeDasharray="5 3" d="M 16 96 H 44" />
-            <text x={54} y={100} fontSize={10.5} fill="#39332E" fontFamily="'Inter', sans-serif">3. External service</text>
+            <text x={54} y={100} fontSize={10.5} fill={cityTheme.hudText} fontFamily="'Inter', sans-serif">3. External service</text>
 
             <path stroke="#927D91" strokeWidth={2.5} strokeDasharray="5 3" d="M 16 114 H 44" />
-            <text x={54} y={118} fontSize={10.5} fill="#39332E" fontFamily="'Inter', sans-serif">4. Async event (⚡)</text>
+            <text x={54} y={118} fontSize={10.5} fill={cityTheme.hudText} fontFamily="'Inter', sans-serif">4. Async event (⚡)</text>
 
             <path stroke="#71869B" strokeWidth={2} strokeDasharray="2 3" d="M 16 132 H 44" />
-            <text x={54} y={136} fontSize={10.5} fill="#39332E" fontFamily="'Inter', sans-serif">5. Inheritance (extends)</text>
+            <text x={54} y={136} fontSize={10.5} fill={cityTheme.hudText} fontFamily="'Inter', sans-serif">5. Inheritance (extends)</text>
 
             <path stroke="#587C78" strokeWidth={3} d="M 16 150 H 44" />
-            <text x={54} y={154} fontSize={10.5} fill="#39332E" fontFamily="'Inter', sans-serif">6. Implements interface</text>
+            <text x={54} y={154} fontSize={10.5} fill={cityTheme.hudText} fontFamily="'Inter', sans-serif">6. Implements interface</text>
 
             <path stroke="#71869B" strokeWidth={2} strokeDasharray="5 2 1 2" d="M 16 168 H 44" />
-            <text x={54} y={172} fontSize={10.5} fill="#39332E" fontFamily="'Inter', sans-serif">7. Dependency injection</text>
+            <text x={54} y={172} fontSize={10.5} fill={cityTheme.hudText} fontFamily="'Inter', sans-serif">7. Dependency injection</text>
 
-            <text x={16} y={194} fontFamily="'Inter', sans-serif" fontSize={10} fontWeight="700" letterSpacing="0.08em" fill="#39332E">
+            <text x={16} y={194} fontFamily="'Inter', sans-serif" fontSize={10} fontWeight="700" letterSpacing="0.08em" fill={cityTheme.hudText}>
               EVIDENCE BADGES
             </text>
-            <circle cx={24} cy={212} r={6.5} fill="#EFF4F4" stroke="#587C78" strokeWidth={1.2} />
+            <circle cx={24} cy={212} r={6.5} fill={isDark ? "#1a2424" : "#EFF4F4"} stroke="#587C78" strokeWidth={1.2} />
             <text x={24} y={215} fontSize={7.5} fontWeight="700" fill="#587C78" textAnchor="middle">S</text>
-            <text x={38} y={215} fontSize={10} fill="#39332E">Static AST</text>
+            <text x={38} y={215} fontSize={10} fill={cityTheme.hudText}>Static AST</text>
 
-            <circle cx={104} cy={212} r={6.5} fill="#F5F0F5" stroke="#927D91" strokeWidth={1.2} />
+            <circle cx={104} cy={212} r={6.5} fill={isDark ? "#241e24" : "#F5F0F5"} stroke="#927D91" strokeWidth={1.2} />
             <text x={104} y={215} fontSize={7.5} fontWeight="700" fill="#927D91" textAnchor="middle">I</text>
-            <text x={118} y={215} fontSize={10} fill="#39332E">Inferred</text>
+            <text x={118} y={215} fontSize={10} fill={cityTheme.hudText}>Inferred</text>
           </g>
 
           {/* 11. EMBEDDED ANALYSIS STATUS & FOOTPRINT LEGEND (Bottom Right) */}
           <g id="city-analysis-status-card" transform={`translate(${cityBounds.maxX - 250}, ${cityBounds.maxY - 250})`}>
-            <rect x={0} y={0} width={230} height={236} rx={12} fill="rgba(255, 255, 255, 0.95)" stroke="#D9CFC7" strokeWidth={1.5} />
-            <text x={16} y={22} fontFamily="'Inter', sans-serif" fontSize={10.5} fontWeight="700" letterSpacing="0.12em" fill="#39332E">
+            <rect x={0} y={0} width={230} height={236} rx={12} fill={isDark ? "rgba(21, 21, 27, 0.95)" : "rgba(255, 255, 255, 0.95)"} stroke={cityTheme.hudBorder} strokeWidth={1.5} />
+            <text x={16} y={22} fontFamily="'Inter', sans-serif" fontSize={10.5} fontWeight="700" letterSpacing="0.12em" fill={cityTheme.hudText}>
               URBAN FOOTPRINTS & GAPS
             </text>
 
             <rect x={16} y={40} width={16} height={12} rx={2} fill="#587C78" />
-            <text x={40} y={50} fontSize={10} fill="#39332E">Wide HQ (Controller / API)</text>
+            <text x={40} y={50} fontSize={10} fill={cityTheme.hudText}>Wide HQ (Controller / API)</text>
 
             <rect x={16} y={62} width={12} height={16} rx={2} fill="#71869B" />
-            <text x={40} y={74} fontSize={10} fill="#39332E">Slender Tower (&gt;350 LOC)</text>
+            <text x={40} y={74} fontSize={10} fill={cityTheme.hudText}>Slender Tower (&gt;350 LOC)</text>
 
             <rect x={16} y={88} width={16} height={12} rx={2} fill="#8D916B" />
-            <text x={40} y={98} fontSize={10} fill="#39332E">Storage Silo (Repo / DAO)</text>
+            <text x={40} y={98} fontSize={10} fill={cityTheme.hudText}>Storage Silo (Repo / DAO)</text>
 
             <circle cx={24} cy={118} r={7} fill="#927D91" />
-            <text x={40} y={121} fontSize={10} fill="#39332E">Pavilion (Event Listener)</text>
+            <text x={40} y={121} fontSize={10} fill={cityTheme.hudText}>Pavilion (Event Listener)</text>
 
             <rect x={16} y={136} width={16} height={12} rx={2} fill="none" stroke="#64836B" strokeWidth={1.2} strokeDasharray="3 2" />
-            <text x={40} y={146} fontSize={10} fill="#39332E">Test Suite File (✓)</text>
+            <text x={40} y={146} fontSize={10} fill={cityTheme.hudText}>Test Suite File (✓)</text>
 
-            <rect x={16} y={160} width={16} height={12} rx={2} fill="#EFE9E3" stroke="#D9CFC7" strokeDasharray="3 2" />
-            <text x={40} y={170} fontSize={10} fill="#39332E">Hatched (Unsupported)</text>
+            <rect x={16} y={160} width={16} height={12} rx={2} fill={isDark ? "#1b1b23" : "#EFE9E3"} stroke={cityTheme.hudBorder} strokeDasharray="3 2" />
+            <text x={40} y={170} fontSize={10} fill={cityTheme.hudText}>Hatched (Unsupported)</text>
 
             <rect x={16} y={184} width={16} height={12} rx={2} fill="none" stroke="#B77C61" strokeWidth={1.5} strokeDasharray="4 2" />
-            <text x={40} y={194} fontSize={10} fill="#39332E">External (Unresolved)</text>
+            <text x={40} y={194} fontSize={10} fill={cityTheme.hudText}>External (Unresolved)</text>
 
-            <text x={16} y={222} fontSize={9.5} fill="#81776F" fontFamily="'Inter', sans-serif">
+            <text x={16} y={222} fontSize={9.5} fill={cityTheme.hudMuted} fontFamily="'Inter', sans-serif">
               Architecture determines geography.
             </text>
           </g>
@@ -2053,14 +2061,14 @@ export const MetropolisCityViewport = ({
       <div
         style={{
           position: 'absolute',
-          bottom: '56px',
+          bottom: '16px',
           right: '16px',
           zIndex: 35,
-          background: 'rgba(249, 248, 246, 0.96)',
+          background: cityTheme.hudBg,
           backdropFilter: 'blur(12px)',
-          border: '1px solid #D9CFC7',
+          border: `1px solid ${cityTheme.hudBorder}`,
           borderRadius: '10px',
-          boxShadow: '0 4px 16px rgba(57, 51, 46, 0.12)',
+          boxShadow: isDark ? '0 4px 20px rgba(0, 0, 0, 0.45)' : '0 4px 16px rgba(18, 20, 26, 0.08)',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
@@ -2073,16 +2081,16 @@ export const MetropolisCityViewport = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '6px 10px',
-            borderBottom: showMinimap ? '1px solid #D9CFC7' : 'none',
-            background: '#EFE9E3',
+            borderBottom: showMinimap ? `1px solid ${cityTheme.hudBorder}` : 'none',
+            background: cityTheme.hudBg,
             fontSize: '10px',
             fontWeight: 700,
-            color: '#39332E',
+            color: cityTheme.hudText,
             letterSpacing: '0.05em'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Compass size={12} style={{ color: '#587C78' }} />
+            <Compass size={12} style={{ color: isDark ? 'var(--cc-cyan, #38bdf8)' : 'var(--a, #3552d6)' }} />
             <span>METROPOLIS NAVIGATOR</span>
           </div>
           <button
@@ -2090,7 +2098,7 @@ export const MetropolisCityViewport = ({
             style={{
               background: 'none',
               border: 'none',
-              color: '#587C78',
+              color: isDark ? 'var(--cc-cyan, #38bdf8)' : 'var(--a, #3552d6)',
               cursor: 'pointer',
               padding: '2px 4px',
               fontSize: '10px',
@@ -2109,7 +2117,7 @@ export const MetropolisCityViewport = ({
               height: '150px',
               position: 'relative',
               cursor: 'crosshair',
-              background: '#EFE9E3'
+              background: cityTheme.groundPerimeter
             }}
             title="Click anywhere to pan camera directly to that location"
           >
@@ -2127,8 +2135,8 @@ export const MetropolisCityViewport = ({
                   y={d.y}
                   width={d.width}
                   height={d.height}
-                  fill={d.themeColor ? `${d.themeColor}22` : '#D9CFC7'}
-                  stroke={d.themeColor || '#C9B59C'}
+                  fill={d.themeColor ? `${d.themeColor}22` : (isDark ? '#23232c' : '#D9CFC7')}
+                  stroke={d.themeColor || (isDark ? '#30303c' : '#C9B59C')}
                   strokeWidth={cityBounds.width * 0.003}
                   rx={8}
                 />
@@ -2140,8 +2148,8 @@ export const MetropolisCityViewport = ({
                 y={minimapFrustum.y}
                 width={minimapFrustum.width}
                 height={minimapFrustum.height}
-                fill="rgba(192, 154, 98, 0.2)"
-                stroke="#C09A62"
+                fill="rgba(109, 140, 255, 0.2)"
+                stroke="var(--cc-accent, #6d8cff)"
                 strokeWidth={Math.max(cityBounds.width * 0.006, 6)}
                 rx={4}
               />
@@ -2151,36 +2159,36 @@ export const MetropolisCityViewport = ({
       </div>
 
       {/* =================================================================== */}
-      {/* FLOATING COMPASS PILL (Bottom Right)                                */}
+      {/* FLOATING COMPASS PILL (Bottom Left - Non-colliding)                 */}
       {/* =================================================================== */}
       <div
         style={{
           position: 'absolute',
           bottom: '16px',
-          right: '16px',
+          left: '16px',
           zIndex: 30,
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          background: 'rgba(249, 248, 246, 0.96)',
+          background: cityTheme.hudBg,
           backdropFilter: 'blur(10px)',
-          border: '1px solid #D9CFC7',
+          border: `1px solid ${cityTheme.hudBorder}`,
           borderRadius: '8px',
           padding: '6px 12px',
           fontSize: '11px',
-          color: '#39332E',
-          boxShadow: '0 4px 16px rgba(57, 51, 46, 0.12)'
+          color: cityTheme.hudText,
+          boxShadow: isDark ? '0 4px 16px rgba(0, 0, 0, 0.4)' : '0 4px 16px rgba(18, 20, 26, 0.06)'
         }}
       >
-        <Compass size={14} style={{ color: '#587C78' }} />
-        <span style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>METROPOLIS N-34</span>
-        <span style={{ color: '#D9CFC7' }}>|</span>
+        <Compass size={14} style={{ color: isDark ? 'var(--cc-cyan, #38bdf8)' : 'var(--a, #3552d6)' }} />
+        <span style={{ fontFamily: "var(--m, 'Geist Mono', monospace)", fontWeight: 600 }}>METROPOLIS N-34</span>
+        <span style={{ color: cityTheme.hudBorder }}>|</span>
         <button
           onClick={fitView}
           style={{
             background: 'none',
             border: 'none',
-            color: '#587C78',
+            color: isDark ? 'var(--cc-cyan, #38bdf8)' : 'var(--a, #3552d6)',
             fontWeight: 700,
             cursor: 'pointer',
             padding: 0
@@ -2188,8 +2196,9 @@ export const MetropolisCityViewport = ({
         >
           Reset View
         </button>
-        <span style={{ color: '#D9CFC7' }}>|</span>
-        <span style={{ color: '#81776F', fontSize: '10px' }}>Space+Drag • F: Fit • +/-: Zoom</span>
+        <span style={{ color: cityTheme.hudBorder }}>|</span>
+        <span style={{ color: cityTheme.hudMuted, fontSize: '10px' }}>Space+Drag • F: Fit • +/-: Zoom</span>
+      </div>
       </div>
     </div>
   );
